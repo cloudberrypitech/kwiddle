@@ -12,18 +12,22 @@ window.iconphoto(True, PhotoImage("winlogo.png"))
 # Variables
 page = 0
 star_repo = None
-repo_path:str = "https://github.com/cloudberrypitech/kwiddle"
+repo_path: str = "https://github.com/cloudberrypitech/kwiddle"
+
 
 # Default Startup Functions
 def contribute_repo():
     global star_repo
-    star_repo = messagebox.askyesno(parent=window, title="Contribute", message="Do you want to star the Kwiddle repo on GitHub?")
+    star_repo = messagebox.askyesno(parent=window, title="Contribute",
+                                    message="Do you want to star the Kwiddle repo on GitHub?")
     if star_repo:
         call(f"open {repo_path}", shell=True)
         star_repo = True
-        messagebox.showinfo(parent=window, icon="info", title="Contribute", message="Thank you for contributing to Kwiddle.")
+        messagebox.showinfo(parent=window, icon="info", title="Contribute",
+                            message="Thank you for contributing to Kwiddle.")
     else:
         star_repo = False
+
 
 # Startup Functions Execution Script
 #contribute_repo()
@@ -135,7 +139,8 @@ And hissing at me
     """
 ]
 
-def book(bookname, content:list):
+
+def book(bookname, content: list):
     global page
     window.withdraw()
     book_window = Toplevel(window)
@@ -143,6 +148,7 @@ def book(bookname, content:list):
     text = Text(book_window, wrap="word")
     text.pack(expand=YES, fill="both")
     text.insert(END, content[page])
+
     def nextpage():
         global page
         try:
@@ -151,6 +157,7 @@ def book(bookname, content:list):
             text.insert(END, content[page])
         except IndexError:
             messagebox.showinfo(parent=book_window, title="Bookreader", message="Book Completed")
+
     Button(book_window, text="Next", command=nextpage).pack(anchor="ne", padx=10)
 
     def lastpage():
@@ -161,8 +168,10 @@ def book(bookname, content:list):
             text.insert(END, content[page])
         except IndexError:
             messagebox.showinfo(parent=book_window, title="Bookreader", message="Book Completed")
+
     Button(book_window, text="Previous", command=lastpage).pack(anchor="nw", pady=0, padx=10)
 
-book(bookname="Cat!", content=cat)
+
+book(bookname="clifford", content=clifford)
 
 mainloop()
