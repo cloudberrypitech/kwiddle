@@ -1,6 +1,4 @@
 # Imports
-from tkinter import *
-from tkinter import messagebox
 from subprocess import call
 
 # Window Attributes
