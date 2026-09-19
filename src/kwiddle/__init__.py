@@ -29,111 +29,117 @@ def contribute_repo():
 #contribute_repo()
 
 # 3 - 5 Offline Books Content
-clifford = [
+tlsun = [
     """
-    Clifford
-    By Norman Bridwell
-    Publishing by : Scholastic
+The Little Sun
+by Kwiddle Books
+
     """,
 
     """
-    It's Clifford's bedtime.
-    His mother helps him into bed.
+The little sun wakes up each day,
+And sends its golden beams our way.
+It paints the sky with shades so bright,
+And fills the world with happy light.
     """,
 
     """
-    But Clifford isn't ready.
-    He needs his bear.
+The flowers open, fresh and sweet,
+The birds begin their morning treat.
+The children laugh and run outside,
+With sunshine dancing by their side.
     """,
 
     """
-    He needs his doll.
-    He needs his blanket.
+When evening comes, the sun goes down,
+And paints the clouds with golden brown.
+It waves goodbye beyond the hill,
+While sleepy stars begin to fill.
     """,
 
     """
-    Now Clifford needs a drink of water.
-    """,
+The Little Sun
+By Kwiddle Word Press / Kwiddle Books.
 
-    """
-    But Clifford isn't sleepy yet.
-    What does Clifford need now?
-    """,
+Any book in this program starting with the word Kwiddle is belonging to Kwiddle Book Foundations and has strict copyrights.
 
-    """
-    Clifford needs his goodnight kiss.
+BIN / Book Identification Number - 311032
     """,
+]
 
+my_little_garden = [
     """
-    Sweet dreams,
-    Clifford.
+My Little Garden
+By Kwiddle Books
+
     """,
-
     """
-    Clifford
-    
-    THE SMALL RED PUPPY
-    
-    All rights reserved. Published by Scholastic Inc.
-    SCHOLASTIC and associated logos are trademarks and/or
-    registered trademarks of Scholastic Inc.
+I have a garden small and neat,
+With lovely flowers, soft and sweet.
+The roses bloom in colors bright,
+And butterflies are a pretty sight.
+    """,
+    """
+I water plants both every day,
+And pull the little weeds away.
+The bees hum softly as they fly,
+And busy birds sing from nearby.
+    """,
+    """
+My garden gives me joy each day,
+And teaches me to care and stay.
+I love each flower, tree, and seed,
+For growing plants is a lovely deed.
+    """,
+    """
+My Little Garden
+By Kwiddle Word Press
+
+Any book in this program starting with the word Kwiddle is belonging to Kwiddle Word Press and has strict copyrights.
+
+BIN / Book Identification Number - 311023
     """
 ]
 
-cat = [
+the_friendly_little_bird = [
     """
-Cat!
-By Eleanor Farjeon
-    """,
-    """
-From Whose Point Of View . . .
-Opinions differ. Many of us love to keep cats as pets because cats take care of themselves unlike dogs. There are people who do not like cats at all! It's all a matter of opinion! Here are two differing point of view on cats. Which of the poets admires cats and probably has one as a pet?
-    """,
-    """
-Scat!
-Atter her, atter her,
-Sleeky flatterer,
-Spitfire chatterer,
-Scatter her, scatter her
-    Off her mat!
-    Wuff!
-    Wuff!
-    Treat her rough!
-    """,
-    """
-Git her, git her,
-Whiskery spitter!
-Catch her, catch her,
-Green-eyed scratcher!
-    Slathery
-    Slithery
-    Hisser,
-    Don't miss her!
+The Friendly Little Bird
+By Kwiddle Wordpress
     """,
 
     """
-Run till you're dithery,
-    Hithery
-    Thithery
-    Pffits, pffits!
-    How she spits!
-    Spitch! Spatch!
-    Can't she scratch!
+A little bird sits in a tree,
+And sings a happy song for me.
+It hops around from branch to branch,
+Then spreads its wings and starts to dance.
     """,
 
     """
-Scritching the bark
-Of the sycamore - tree,
-She's reacher her arc
-And hissing at me
-    Pffits! Pffits!
-    Wuff! Wuff!
-    Scat,
-    Cat!
-    That's
-    That!
+It flies above the houses bright,
+And circles gently in the light.
+It finds some food and drinks some rain,
+Then flies back to its tree again.
+    """,
+
+    """
+At sunset, when the day is through,
+The little bird says, “Tweet, tweet, to you!”
+It closes its eyes and rests its head,
+And sleeps peacefully in its bed.
+    """,
+
+    """
+The Friendly Little Bird
+By Kwiddle Wordpress
+
+Any book in this program starting with the word Kwiddle is belonging to Kwiddle Word Press and has strict copyrights.
+
+BIN / Book Identification Number - 311022
     """
 ]
+
+
+
 
 def book(bookname, content:list):
     global page
@@ -151,7 +157,7 @@ def book(bookname, content:list):
             text.insert(END, content[page])
         except IndexError:
             messagebox.showinfo(parent=book_window, title="Bookreader", message="Book Completed")
-    Button(book_window, text="Next", command=nextpage).pack(anchor="ne", padx=10)
+    Button(book_window, text="Next", command=nextpage, height=5, width=10).pack(anchor="ne", padx=10)
 
     def lastpage():
         global page
@@ -161,8 +167,8 @@ def book(bookname, content:list):
             text.insert(END, content[page])
         except IndexError:
             messagebox.showinfo(parent=book_window, title="Bookreader", message="Book Completed")
-    Button(book_window, text="Previous", command=lastpage).pack(anchor="nw", pady=0, padx=10)
+    Button(book_window, text="Previous", command=lastpage, height=5, width=10).pack(anchor="nw", pady=0, padx=10)
 
-book(bookname="Cat!", content=cat)
+book("The friendly little bird", the_friendly_little_bird)
 
 mainloop()
