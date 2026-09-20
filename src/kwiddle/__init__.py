@@ -149,6 +149,7 @@ def book(bookname, content:list):
     text = Text(book_window, wrap="word")
     text.pack(expand=YES, fill="both")
     text.insert(END, content[page])
+    text.config(state=DISABLED)
     def nextpage():
         global page
         try:
