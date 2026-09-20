@@ -12,18 +12,22 @@ window.iconphoto(True, PhotoImage("winlogo.png"))
 # Variables
 page = 0
 star_repo = None
-repo_path:str = "https://github.com/cloudberrypitech/kwiddle"
+repo_path: str = "https://github.com/cloudberrypitech/kwiddle"
+
 
 # Default Startup Functions
 def contribute_repo():
     global star_repo
-    star_repo = messagebox.askyesno(parent=window, title="Contribute", message="Do you want to star the Kwiddle repo on GitHub?")
+    star_repo = messagebox.askyesno(parent=window, title="Contribute",
+                                    message="Do you want to star the Kwiddle repo on GitHub?")
     if star_repo:
         call(f"open {repo_path}", shell=True)
         star_repo = True
-        messagebox.showinfo(parent=window, icon="info", title="Contribute", message="Thank you for contributing to Kwiddle.")
+        messagebox.showinfo(parent=window, icon="info", title="Contribute",
+                            message="Thank you for contributing to Kwiddle.")
     else:
         star_repo = False
+
 
 # Startup Functions Execution Script
 #contribute_repo()
@@ -56,5 +60,7 @@ def book(bookname, content:list):
         except IndexError:
             messagebox.showinfo(parent=book_window, title="Bookreader", message="Book Completed")
     Button(book_window, text="Previous", command=lastpage, height=5, width=10).pack(anchor="nw", pady=0, padx=10)
+
+book(bookname="clifford", content=clifford)
 
 mainloop()
