@@ -627,7 +627,7 @@ develop = false
 type = "git"
 url = "https://github.com/cloudberrypitech/kwbooklib.git"
 reference = "HEAD"
-resolved_reference = "ea8be6245e4d9d8bbd57890c6e4dfdb4a690ffa8"
+resolved_reference = "444adcdef27211a745d98134ad585f5ddcab151f"
 
 [[package]]
 name = "macholib"
@@ -669,22 +669,6 @@ files = [
     {file = "pefile-2024.8.26-py3-none-any.whl", hash = "sha256:76f8b485dcd3b1bb8166f1128d395fa3d87af26360c2358fb75b80019b957c6f"},
     {file = "pefile-2024.8.26.tar.gz", hash = "sha256:3ff6c5d8b43e8c37bb6e6dd5085658d658a7a0bdcd20b6a07b1fcfc1c4e9d632"},
 ]
-
-[[package]]
-name = "pwd-booklib"
-version = "0.1.0"
-description = ""
-optional = false
-python-versions = ">=3.13"
-groups = ["main"]
-files = []
-develop = false
-
-[package.source]
-type = "git"
-url = "https://github.com/cloudberrypitech/pwd-booklib.git"
-reference = "HEAD"
-resolved_reference = "6b88522e65c81e2c5e8f6bc9ca409108d63c44fb"
 
 [[package]]
 name = "pycparser"
@@ -937,4 +921,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.16"
-content-hash = "465103b61cd9562a8900f02d926e4d9bc8320354cb91a3c9c370f54c0f17177e"
+content-hash = "20d8736673bba1fba2266890e9ba619560ec4a28531ca094b27b015a5203969d"
