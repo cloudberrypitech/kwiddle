@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="20c7274e-c46e-449e-bdde-11d5e1272c8f" name="Changes" comment="Update pyproject.toml&#10;Update pyproject.toml" />
+    <list default="true" id="20c7274e-c46e-449e-bdde-11d5e1272c8f" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -29,6 +30,10 @@
   &quot;associatedIndex&quot;: 8,
   &quot;fromUser&quot;: false
 }</component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 8,
+  "fromUser": false
+}]]></component>
   <component name="ProjectId" id="3JN77EPKNzqYanTevuQhGFuJIuS" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -99,6 +104,17 @@
       <method v="2" />
     </configuration>
   </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "automated-files",
+    "nodejs_package_manager_path": "npm"
+  }
+}]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
