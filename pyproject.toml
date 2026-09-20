@@ -18,11 +18,3 @@ packages = [{include = "kwiddle", from = "src"}]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[dependency-groups]
-dev = [
-    "twine (>=7.0.0,<8.0.0)"
-]
-
-[[tool.poetry.repositories]]
-name = "github"
-url = "https://pypi.pkg.github.com/cloudberrypitech"
