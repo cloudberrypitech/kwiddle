@@ -1,14 +1,16 @@
 [project]
 name = "kwiddle"
-version = "0.0.1"
+version = "0.1.0"
 description = ""
 authors = [
     {name = "CloudberryPiTech",email = "bubblesbakale@outlook.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.13,<3.16"
 dependencies = [
-    "pyfiglet (>=1.0.4,<2.0.0)"
+    "pyfiglet (>=1.0.4,<2.0.0)",
+    "auto-py-to-exe (>=2.50.1,<3.0.0)",
+    "pwd-booklib @ git+https://github.com/cloudberrypitech/pwd-booklib.git"
 ]
 
 [tool.poetry]
