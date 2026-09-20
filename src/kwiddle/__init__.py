@@ -1,7 +1,7 @@
 # Imports
-from tkinter import *
-from tkinter import messagebox
 from subprocess import call
+from tkinter import * # type: ignore
+from tkinter import messagebox
 
 # Window Attributes
 window = Tk()
@@ -32,115 +32,7 @@ def contribute_repo():
 # Startup Functions Execution Script
 #contribute_repo()
 
-# 3 - 5 Offline Books Content
-clifford = [
-    """
-    Clifford
-    By Norman Bridwell
-    Publishing by : Scholastic
-    """,
-
-    """
-    It's Clifford's bedtime.
-    His mother helps him into bed.
-    """,
-
-    """
-    But Clifford isn't ready.
-    He needs his bear.
-    """,
-
-    """
-    He needs his doll.
-    He needs his blanket.
-    """,
-
-    """
-    Now Clifford needs a drink of water.
-    """,
-
-    """
-    But Clifford isn't sleepy yet.
-    What does Clifford need now?
-    """,
-
-    """
-    Clifford needs his goodnight kiss.
-    """,
-
-    """
-    Sweet dreams,
-    Clifford.
-    """,
-
-    """
-    Clifford
-    
-    THE SMALL RED PUPPY
-    
-    All rights reserved. Published by Scholastic Inc.
-    SCHOLASTIC and associated logos are trademarks and/or
-    registered trademarks of Scholastic Inc.
-    """
-]
-
-cat = [
-    """
-Cat!
-By Eleanor Farjeon
-    """,
-    """
-From Whose Point Of View . . .
-Opinions differ. Many of us love to keep cats as pets because cats take care of themselves unlike dogs. There are people who do not like cats at all! It's all a matter of opinion! Here are two differing point of view on cats. Which of the poets admires cats and probably has one as a pet?
-    """,
-    """
-Scat!
-Atter her, atter her,
-Sleeky flatterer,
-Spitfire chatterer,
-Scatter her, scatter her
-    Off her mat!
-    Wuff!
-    Wuff!
-    Treat her rough!
-    """,
-    """
-Git her, git her,
-Whiskery spitter!
-Catch her, catch her,
-Green-eyed scratcher!
-    Slathery
-    Slithery
-    Hisser,
-    Don't miss her!
-    """,
-
-    """
-Run till you're dithery,
-    Hithery
-    Thithery
-    Pffits, pffits!
-    How she spits!
-    Spitch! Spatch!
-    Can't she scratch!
-    """,
-
-    """
-Scritching the bark
-Of the sycamore - tree,
-She's reacher her arc
-And hissing at me
-    Pffits! Pffits!
-    Wuff! Wuff!
-    Scat,
-    Cat!
-    That's
-    That!
-    """
-]
-
-
-def book(bookname, content: list):
+def book(bookname, content:list):
     global page
     window.withdraw()
     book_window = Toplevel(window)
@@ -148,7 +40,7 @@ def book(bookname, content: list):
     text = Text(book_window, wrap="word")
     text.pack(expand=YES, fill="both")
     text.insert(END, content[page])
-
+    text.config(state=DISABLED)
     def nextpage():
         global page
         try:
@@ -157,8 +49,7 @@ def book(bookname, content: list):
             text.insert(END, content[page])
         except IndexError:
             messagebox.showinfo(parent=book_window, title="Bookreader", message="Book Completed")
-
-    Button(book_window, text="Next", command=nextpage).pack(anchor="ne", padx=10)
+    Button(book_window, text="Next", command=nextpage, height=5, width=10).pack(anchor="ne", padx=10)
 
     def lastpage():
         global page
@@ -168,9 +59,7 @@ def book(bookname, content: list):
             text.insert(END, content[page])
         except IndexError:
             messagebox.showinfo(parent=book_window, title="Bookreader", message="Book Completed")
-
-    Button(book_window, text="Previous", command=lastpage).pack(anchor="nw", pady=0, padx=10)
-
+    Button(book_window, text="Previous", command=lastpage, height=5, width=10).pack(anchor="nw", pady=0, padx=10)
 
 book(bookname="clifford", content=clifford)
 
