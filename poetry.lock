@@ -627,22 +627,6 @@ test = ["jaraco.test (>=5.4)", "pytest (>=6,!=8.1.*)", "zipp (>=3.17)"]
 type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 
 [[package]]
-name = "kwbooklib"
-version = "0.1.0"
-description = ""
-optional = false
-python-versions = ">=3.13"
-groups = ["main"]
-files = []
-develop = false
-
-[package.source]
-type = "git"
-url = "https://github.com/cloudberrypitech/kwbooklib.git"
-reference = "HEAD"
-resolved_reference = "444adcdef27211a745d98134ad585f5ddcab151f"
-
-[[package]]
 name = "macholib"
 version = "1.16.4"
 description = "Mach-O header analysis and editing"
@@ -4741,4 +4725,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.16"
-content-hash = "962f2aa8ad3a7f8df17c1a3db37bd8b9e7350b23f791a68a386bb4b1017596c6"
+content-hash = "31b9317c9879900d6d3766dbf4440f5d0c3afc129c878930869f49cb87a925e9"
