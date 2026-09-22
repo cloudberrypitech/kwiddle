@@ -68,5 +68,5 @@ def book(bookname, content:list):
 def tsun():
     book("The Little Sun", tlsun)
 
-Button(window, text="The Little Sun", height=2, width=5, command=tsun).pack()
+Button(window, text="The Little Sun", height=5, width=10, command=tsun).pack()
 mainloop()
