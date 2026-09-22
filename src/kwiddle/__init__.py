@@ -3,7 +3,6 @@ from subprocess import call
 from tkinter import * # type: ignore
 from tkinter import messagebox
 from books import *
-import books
 
 # Window Attributes
 window = Tk()
@@ -12,7 +11,9 @@ window.title("Kwiddle")
 
 # Variables
 newfidget = list
+tidget = 0
 page = 0
+funcfidget = any
 tryfidget = 0
 star_repo = None
 repo_path: str = "https://github.com/cloudberrypitech/kwiddle"
@@ -76,17 +77,27 @@ with open("./src/kwiddle/booklist.txt", "r") as f:
     content = f.read()
     newfidget = content.split(";")
 
-
-
+with open("./src/kwiddle/funclib.txt", "r") as f:
+    funccontent = f.read()
+    funcfidget = funccontent.split(";")
+    fa = funcfidget
 
 
 for things in newfidget:
     try:
         def tsun():
                 global newfidget
-                book(newfidget[tryfidget], tlsun)
+                global funcfidget
+                global tryfidget
+                global tidget
+                book(str(newfidget[tryfidget]), list(fa[tidget]))
         Button(window, text=newfidget[tryfidget], height=5, width=10, command=tsun).pack()
         tryfidget += 1
+        tidget += 1
+        print(fa[tryfidget])
+        if tryfidget == 4 or tidget == 4:
+            tryfidget = 0
+            tidget = 0
     except IndexError:
         pass
 mainloop()
