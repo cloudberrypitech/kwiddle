@@ -1,0 +1,23 @@
+name: Code format check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dprint/action@v2
+        with:
+          version: "0.45.0"   # latest stable
+      - name: Run formatter
+        run: dprint fmt --unstable   # --unstable enables the community plugins
+      - name: Verify no changes
+        run: |
+          git diff --exit-code || (
+            echo "⚠️ Files are not properly formatted. See the diff above."
+            exit 1
+          )
