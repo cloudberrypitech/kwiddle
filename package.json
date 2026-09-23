@@ -1,5 +1,9 @@
 {
   "devDependencies": {
+<<<<<<< Updated upstream
     "prettier": "3.9.9"
+=======
+    "prettier": "^3.9.9"
+>>>>>>> Stashed changes
   }
 }
