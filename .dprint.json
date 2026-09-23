@@ -1,0 +1,7 @@
+{
+  "includes": ["**/*.{py,adoc,asciidoc,md,js,ts,css,html,json,yaml}"],
+  "plugins": [
+    "https://plugins.dprint.dev/python-0.2.0.wasm",
+    "https://plugins.dprint.dev/asciidoc-0.1.0.wasm"
+  ]
+}
