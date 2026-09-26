@@ -1,5 +1,3 @@
-# src/kwiddle/__init__.py
-
 from subprocess import call
 from tkinter import *
 from tkinter import messagebox
@@ -14,27 +12,15 @@ from odf.text import P, H, Span
 from odf.style import Style
 from odf.element import Element
 
-
-# ============================================================
-# Configuration
-# ============================================================
-
 window = Tk()
 window.geometry("500x500")
 window.title("Kwiddle")
 
 REPO_URL = "https://github.com/cloudberrypitech/kwiddle"
 
-# Folder containing .odt / .fodt books
 BOOKS_FOLDER = Path(__file__).parent / "books"
 
-# How often to check for new/changed books
 AUTO_UPDATE_INTERVAL = 2000
-
-
-# ============================================================
-# Book storage
-# ============================================================
 
 books = {}
 book_files = {}
@@ -42,10 +28,6 @@ book_buttons = {}
 
 library_signature = None
 
-
-# ============================================================
-# Contribute
-# ============================================================
 
 def contribute_repo():
     answer = messagebox.askyesno(
@@ -65,11 +47,6 @@ def contribute_repo():
             title="Contribute",
             message="Thank you for contributing to Kwiddle."
         )
-
-
-# ============================================================
-# ODT helpers
-# ============================================================
 
 def get_element_text(element):
     """Get the text contained inside an ODT element."""
@@ -277,11 +254,6 @@ def make_font(properties):
         slant
     )
 
-
-# ============================================================
-# Text formatting
-# ============================================================
-
 def configure_text_tag(text_widget, tag_name, properties):
     """Create/update a Tkinter Text formatting tag."""
 
@@ -355,13 +327,8 @@ def insert_odt_node(
             if value is not None:
                 properties[key] = value
 
-    # --------------------------------------------------------
-    # Paragraph / heading
-    # --------------------------------------------------------
-
     if isinstance(node, (P, H)):
 
-        # Extract paragraph alignment
         alignment = properties.get("align")
 
         if alignment:
@@ -377,7 +344,6 @@ def insert_odt_node(
             properties
         )
 
-        # Process children
         for child in node.childNodes:
 
             if isinstance(child, str):
@@ -402,10 +368,6 @@ def insert_odt_node(
         )
 
         return
-
-    # --------------------------------------------------------
-    # Span
-    # --------------------------------------------------------
 
     if isinstance(node, Span):
 
@@ -440,10 +402,6 @@ def insert_odt_node(
 
         return
 
-    # --------------------------------------------------------
-    # Generic element
-    # --------------------------------------------------------
-
     for child in getattr(
         node,
         "childNodes",
@@ -476,11 +434,6 @@ def insert_odt_node(
                 child,
                 properties
             )
-
-
-# ============================================================
-# Load ODT book
-# ============================================================
 
 def load_odt_book(file_path):
     """
@@ -540,9 +493,6 @@ def get_book_title(document, file_path):
     ).title()
 
 
-# ============================================================
-# Read book directory
-# ============================================================
 
 def scan_books():
     """
@@ -591,8 +541,6 @@ def scan_books():
                 document,
                 file_path
             )
-
-            # Make duplicate titles unique
             original_title = title
             counter = 2
 
@@ -618,10 +566,6 @@ def scan_books():
     books = new_books
     book_files = new_files
 
-
-# ============================================================
-# Library signature
-# ============================================================
 
 def get_library_signature():
     """
@@ -663,11 +607,6 @@ def get_library_signature():
         sorted(files)
     )
 
-
-# ============================================================
-# Open book
-# ============================================================
-
 def open_book(title):
     """Open a selected book."""
 
@@ -700,10 +639,6 @@ def open_book(title):
         400
     )
 
-    # --------------------------------------------------------
-    # Resizable vertical layout
-    # --------------------------------------------------------
-
     reader_pane = PanedWindow(
         book_window,
         orient=VERTICAL,
@@ -717,17 +652,9 @@ def open_book(title):
         expand=True
     )
 
-    # --------------------------------------------------------
-    # Text area
-    # --------------------------------------------------------
-
     text_frame = Frame(
         reader_pane
     )
-
-    # --------------------------------------------------------
-    # Navigation
-    # --------------------------------------------------------
 
     navigation_frame = Frame(
         book_window
@@ -744,10 +671,6 @@ def open_book(title):
         minsize=80,
         stretch="never"
     )
-
-    # --------------------------------------------------------
-    # Text widget
-    # --------------------------------------------------------
 
     text = Text(
         text_frame,
@@ -781,10 +704,6 @@ def open_book(title):
     text.configure(
         yscrollcommand=scrollbar.set
     )
-
-    # --------------------------------------------------------
-    # ODT content
-    # --------------------------------------------------------
 
     text.config(
         state=NORMAL
@@ -825,10 +744,6 @@ def open_book(title):
         "1.0"
     )
 
-    # --------------------------------------------------------
-    # Navigation buttons
-    # --------------------------------------------------------
-
     Button(
         navigation_frame,
         text="Close",
@@ -862,11 +777,6 @@ def open_book(title):
         pady=10
     )
 
-
-# ============================================================
-# Main library UI
-# ============================================================
-
 title_label = Label(
     window,
     text="Kwiddle Books",
@@ -876,11 +786,6 @@ title_label = Label(
 title_label.pack(
     pady=15
 )
-
-
-# ------------------------------------------------------------
-# Library frame
-# ------------------------------------------------------------
 
 library_frame = Frame(
     window
@@ -928,11 +833,6 @@ scrollbar.pack(
     fill=Y
 )
 
-
-# ============================================================
-# Canvas resizing
-# ============================================================
-
 def resize_scroll_region(event=None):
 
     canvas.configure(
@@ -958,15 +858,9 @@ canvas.bind(
 )
 
 
-# ============================================================
-# Create book buttons
-# ============================================================
-
 def rebuild_book_buttons():
 
     global book_buttons
-
-    # Remove existing buttons
     for button in book_buttons.values():
 
         try:
@@ -976,7 +870,6 @@ def rebuild_book_buttons():
 
     book_buttons = {}
 
-    # No books
     if not books:
 
         Label(
@@ -992,7 +885,6 @@ def rebuild_book_buttons():
 
         return
 
-    # Create button for every book
     for title in books:
 
         button = Button(
@@ -1008,11 +900,6 @@ def rebuild_book_buttons():
         )
 
         book_buttons[title] = button
-
-
-# ============================================================
-# Automatic library update
-# ============================================================
 
 def auto_update():
 
@@ -1031,8 +918,6 @@ def auto_update():
             )
 
             scan_books()
-
-            # Update Tkinter from the main thread
             window.after(
                 0,
                 rebuild_book_buttons
@@ -1043,17 +928,10 @@ def auto_update():
         print(
             f"Automatic library update error: {error}"
         )
-
-    # Check again
     window.after(
         AUTO_UPDATE_INTERVAL,
         auto_update
     )
-
-
-# ============================================================
-# Mouse-wheel scrolling
-# ============================================================
 
 def mousewheel(event):
 
@@ -1069,10 +947,6 @@ canvas.bind_all(
 )
 
 
-# ============================================================
-# Start library
-# ============================================================
-
 BOOKS_FOLDER.mkdir(
     parents=True,
     exist_ok=True
@@ -1087,18 +961,10 @@ library_signature = (
 rebuild_book_buttons()
 
 
-# ============================================================
-# Start automatic updates
-# ============================================================
-
 window.after(
     AUTO_UPDATE_INTERVAL,
     auto_update
 )
 
-
-# ============================================================
-# Start application
-# ============================================================
 
 mainloop()
