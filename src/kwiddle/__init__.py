@@ -1,26 +1,46 @@
-# Imports
+# src/kwiddle/__init__.py
+
 from subprocess import call
 from tkinter import *
 from tkinter import messagebox
-import json
+from pathlib import Path
 import re
+import threading
+import time
+
+from odf import teletype
+from odf.opendocument import load
+from odf.text import P, H, Span
+from odf.style import Style
+from odf.element import Element
 
 
 # ============================================================
-# Window
+# Configuration
 # ============================================================
 
 window = Tk()
 window.geometry("500x500")
 window.title("Kwiddle")
 
+REPO_URL = "https://github.com/cloudberrypitech/kwiddle"
+
+# Folder containing .odt / .fodt books
+BOOKS_FOLDER = Path(__file__).parent / "books"
+
+# How often to check for new/changed books
+AUTO_UPDATE_INTERVAL = 2000
+
 
 # ============================================================
-# Variables
+# Book storage
 # ============================================================
 
-repo_path = "https://github.com/cloudberrypitech/kwiddle"
-star_repo = None
+books = {}
+book_files = {}
+book_buttons = {}
+
+library_signature = None
 
 
 # ============================================================
@@ -28,312 +48,660 @@ star_repo = None
 # ============================================================
 
 def contribute_repo():
-    global star_repo
-
-    star_repo = messagebox.askyesno(
+    answer = messagebox.askyesno(
         parent=window,
         title="Contribute",
         message="Do you want to star the Kwiddle repo on GitHub?"
     )
 
-    if star_repo:
-        call(f"open {repo_path}", shell=True)
+    if answer:
+        call(
+            f"open {REPO_URL}",
+            shell=True
+        )
 
         messagebox.showinfo(
             parent=window,
-            icon="info",
             title="Contribute",
             message="Thank you for contributing to Kwiddle."
         )
 
 
 # ============================================================
-# Load Books
+# ODT helpers
 # ============================================================
 
-def load_books(file_path):
-    """Load all books from books.json."""
+def get_element_text(element):
+    """Get the text contained inside an ODT element."""
 
     try:
-        with open(file_path, "r", encoding="utf-8") as file:
-            data = json.load(file)
-
-        if not isinstance(data, dict):
-            messagebox.showerror(
-                "Error",
-                "books.json must contain a JSON object."
-            )
-            return {}
-
-        return data
-
-    except FileNotFoundError:
-        messagebox.showerror(
-            "Error",
-            f"File not found: {file_path}"
-        )
-        return {}
-
-    except json.JSONDecodeError as error:
-        messagebox.showerror(
-            "Error",
-            f"Invalid JSON format in {file_path}:\n\n{error}"
-        )
-        return {}
+        return teletype.extractText(element)
+    except Exception:
+        return ""
 
 
-# ============================================================
-# Formatting
-# ============================================================
+def get_style_name(element):
+    """Get the style name assigned to an ODT element."""
 
-def insert_formatted_text(text_widget, content):
+    try:
+        return element.getAttribute("stylename") or ""
+    except Exception:
+        return ""
+
+
+def get_style_properties(document, style_name):
     """
-    Insert book content into a Text widget and interpret
-    formatting tags such as:
-
-        [title]
-        [subtitle]
-        [heading]
-        [bold]
-        [italic]
-        [center]
-        [right]
-        [normal]
-
-    Closing tags are also supported:
-
-        [bold]text[/bold]
-        [italic]text[/italic]
+    Read basic formatting properties from an ODT style.
     """
 
-    # Make sure everything is a string
-    content = str(content)
+    properties = {
+        "bold": False,
+        "italic": False,
+        "underline": False,
+        "size": None,
+        "font": None,
+        "align": None,
+    }
 
-    # --------------------------------------------------------
-    # Text tags
-    # --------------------------------------------------------
+    if not style_name:
+        return properties
 
-    text_widget.tag_configure(
-        "title",
-        font=("Arial", 24, "bold"),
-        justify="center",
-        spacing3=15
-    )
+    try:
+        styles = document.styles
 
-    text_widget.tag_configure(
-        "subtitle",
-        font=("Arial", 15, "italic"),
-        justify="center",
-        spacing3=20
-    )
+        for style in styles.getElementsByType(Style):
 
-    text_widget.tag_configure(
-        "heading",
-        font=("Arial", 19, "bold"),
-        spacing1=10,
-        spacing3=10
-    )
+            if style.getAttribute("name") != style_name:
+                continue
 
-    text_widget.tag_configure(
-        "bold",
-        font=("Arial", 14, "bold")
-    )
+            text_properties = None
+            paragraph_properties = None
 
-    text_widget.tag_configure(
-        "italic",
-        font=("Arial", 14, "italic")
-    )
+            for child in style.childNodes:
 
-    text_widget.tag_configure(
-        "center",
-        justify="center"
-    )
+                if child.qname[1] == "text-properties":
+                    text_properties = child
 
-    text_widget.tag_configure(
-        "right",
-        justify="right"
-    )
+                elif child.qname[1] == "paragraph-properties":
+                    paragraph_properties = child
 
-    text_widget.tag_configure(
-        "normal",
-        font=("Arial", 14),
-        justify="left"
-    )
+            if text_properties is not None:
 
-    # --------------------------------------------------------
-    # Check for complete tagged blocks
-    # --------------------------------------------------------
-
-    block_pattern = re.compile(
-        r"\[(title|subtitle|heading|bold|italic|center|right|normal)\]"
-        r"(.*?)"
-        r"\[/\1\]",
-        re.DOTALL | re.IGNORECASE
-    )
-
-    position = 0
-
-    for match in block_pattern.finditer(content):
-
-        # Insert text before the formatted block
-        before = content[position:match.start()]
-
-        if before:
-            text_widget.insert(
-                END,
-                before,
-                "normal"
-            )
-
-        tag = match.group(1).lower()
-        value = match.group(2)
-
-        text_widget.insert(
-            END,
-            value,
-            tag
-        )
-
-        position = match.end()
-
-    # --------------------------------------------------------
-    # Handle remaining text
-    # --------------------------------------------------------
-
-    remaining = content[position:]
-
-    if remaining:
-        # Handle single-line tags such as:
-        #
-        # [title]My Book
-        #
-        # without requiring [/title]
-
-        lines = remaining.splitlines(keepends=True)
-
-        for line in lines:
-
-            stripped = line.strip()
-
-            tag_match = re.match(
-                r"^\[(title|subtitle|heading|bold|italic|center|right|normal)\](.*)$",
-                stripped,
-                re.IGNORECASE
-            )
-
-            if tag_match:
-
-                tag = tag_match.group(1).lower()
-                value = tag_match.group(2)
-
-                # Preserve newline
-                if line.endswith("\n"):
-                    value += "\n"
-
-                text_widget.insert(
-                    END,
-                    value,
-                    tag
-                )
-
-            else:
-                text_widget.insert(
-                    END,
-                    line,
-                    "normal"
-                )
-
-
-# ============================================================
-# Book Reader
-# ============================================================
-
-def book(bookname, content):
-    """
-    Open a book reader.
-
-    The text area and navigation area are separated by a
-    draggable PanedWindow sash.
-    """
-
-    # --------------------------------------------------------
-    # Book window
-    # --------------------------------------------------------
-
-    book_window = Toplevel(window)
-
-    book_window.title(
-        f"Kwiddle - {bookname}"
-    )
-
-    book_window.geometry(
-        "750x650"
-    )
-
-    book_window.minsize(
-        400,
-        350
-    )
-
-    # --------------------------------------------------------
-    # Make sure content is a list
-    # --------------------------------------------------------
-
-    if not isinstance(content, list):
-        content = [content]
-
-    # Convert dictionary-style JSON entries to strings
-    cleaned_content = []
-
-    for item in content:
-
-        if isinstance(item, dict):
-
-            # Support objects such as:
-            #
-            # {"text": "Hello"}
-            #
-            # or the old malformed-style structure
-            # if it contains a single value.
-
-            if "text" in item:
-                cleaned_content.append(
-                    str(item["text"])
-                )
-
-            elif len(item) == 1:
-                cleaned_content.append(
-                    str(next(iter(item.values())))
-                )
-
-            else:
-                cleaned_content.append(
-                    " ".join(
-                        str(value)
-                        for value in item.values()
+                font_weight = (
+                    text_properties.getAttribute(
+                        "fontweight"
+                    )
+                    or text_properties.getAttribute(
+                        "font-weight"
                     )
                 )
 
-        else:
-            cleaned_content.append(
-                str(item)
+                font_style = (
+                    text_properties.getAttribute(
+                        "fontstyle"
+                    )
+                    or text_properties.getAttribute(
+                        "font-style"
+                    )
+                )
+
+                underline = (
+                    text_properties.getAttribute(
+                        "textunderlinestyle"
+                    )
+                    or text_properties.getAttribute(
+                        "text-underline-style"
+                    )
+                )
+
+                font_size = (
+                    text_properties.getAttribute(
+                        "fontsize"
+                    )
+                    or text_properties.getAttribute(
+                        "font-size"
+                    )
+                )
+
+                font_name = (
+                    text_properties.getAttribute(
+                        "fontfamily"
+                    )
+                    or text_properties.getAttribute(
+                        "font-family"
+                    )
+                )
+
+                if font_weight:
+                    properties["bold"] = (
+                        str(font_weight).lower()
+                        in ("bold", "700", "800", "900")
+                    )
+
+                if font_style:
+                    properties["italic"] = (
+                        str(font_style).lower()
+                        in ("italic", "oblique")
+                    )
+
+                if underline:
+                    properties["underline"] = (
+                        str(underline).lower()
+                        not in ("none", "")
+                    )
+
+                if font_size:
+                    properties["size"] = font_size
+
+                if font_name:
+                    properties["font"] = font_name
+
+            if paragraph_properties is not None:
+
+                align = (
+                    paragraph_properties.getAttribute(
+                        "textalign"
+                    )
+                    or paragraph_properties.getAttribute(
+                        "text-align"
+                    )
+                )
+
+                if align:
+                    properties["align"] = str(align).lower()
+
+            break
+
+    except Exception:
+        pass
+
+    return properties
+
+
+def size_to_tk(size):
+    """Convert common ODT font sizes to Tkinter points."""
+
+    if not size:
+        return 14
+
+    try:
+        size = str(size).strip().lower()
+
+        if size.endswith("pt"):
+            return max(
+                6,
+                int(round(float(size[:-2])))
             )
 
-    if not cleaned_content:
-        cleaned_content = [
-            "[title]Empty Book"
-        ]
+        if size.endswith("px"):
+            return max(
+                6,
+                int(round(float(size[:-2]) * 0.75))
+            )
+
+        if size.endswith("cm"):
+            return max(
+                6,
+                int(round(float(size[:-2]) * 28.346))
+            )
+
+    except Exception:
+        pass
+
+    return 14
+
+
+def make_font(properties):
+    """Create a Tkinter font tuple from ODT properties."""
+
+    font_name = properties.get("font") or "Arial"
+    size = size_to_tk(properties.get("size"))
+
+    if properties.get("bold") and properties.get("italic"):
+        weight = "bold"
+        slant = "italic"
+    elif properties.get("bold"):
+        weight = "bold"
+        slant = "roman"
+    elif properties.get("italic"):
+        weight = "normal"
+        slant = "italic"
+    else:
+        weight = "normal"
+        slant = "roman"
+
+    return (
+        font_name,
+        size,
+        weight,
+        slant
+    )
+
+
+# ============================================================
+# Text formatting
+# ============================================================
+
+def configure_text_tag(text_widget, tag_name, properties):
+    """Create/update a Tkinter Text formatting tag."""
+
+    options = {
+        "font": make_font(properties)
+    }
+
+    if properties.get("underline"):
+        options["underline"] = True
+
+    alignment = properties.get("align")
+
+    if alignment == "center":
+        options["justify"] = "center"
+
+    elif alignment == "right":
+        options["justify"] = "right"
+
+    elif alignment == "left":
+        options["justify"] = "left"
+
+    text_widget.tag_configure(
+        tag_name,
+        **options
+    )
+
+
+def insert_odt_node(
+    text_widget,
+    document,
+    node,
+    inherited=None
+):
+    """
+    Recursively insert an ODT element into the Tkinter Text widget.
+
+    This preserves common Writer formatting such as:
+
+    - bold
+    - italic
+    - underline
+    - font size
+    - font family
+    - left/center/right alignment
+    - headings
+    - paragraphs
+    """
+
+    if inherited is None:
+        inherited = {
+            "bold": False,
+            "italic": False,
+            "underline": False,
+            "size": None,
+            "font": None,
+            "align": None
+        }
+
+    properties = inherited.copy()
+
+    style_name = get_style_name(node)
+
+    if style_name:
+        style_properties = get_style_properties(
+            document,
+            style_name
+        )
+
+        for key, value in style_properties.items():
+
+            if value is not None:
+                properties[key] = value
 
     # --------------------------------------------------------
-    # Current page
+    # Paragraph / heading
     # --------------------------------------------------------
 
-    current_page = [0]
+    if isinstance(node, (P, H)):
+
+        # Extract paragraph alignment
+        alignment = properties.get("align")
+
+        if alignment:
+            properties["align"] = alignment
+
+        tag_name = (
+            f"style_{id(node)}"
+        )
+
+        configure_text_tag(
+            text_widget,
+            tag_name,
+            properties
+        )
+
+        # Process children
+        for child in node.childNodes:
+
+            if isinstance(child, str):
+                text_widget.insert(
+                    END,
+                    child,
+                    tag_name
+                )
+
+            else:
+                insert_odt_node(
+                    text_widget,
+                    document,
+                    child,
+                    properties
+                )
+
+        text_widget.insert(
+            END,
+            "\n\n",
+            tag_name
+        )
+
+        return
 
     # --------------------------------------------------------
-    # Resizable reader
-    #
-    # The sash between these two panes can be dragged.
+    # Span
+    # --------------------------------------------------------
+
+    if isinstance(node, Span):
+
+        tag_name = (
+            f"style_{id(node)}"
+        )
+
+        configure_text_tag(
+            text_widget,
+            tag_name,
+            properties
+        )
+
+        for child in node.childNodes:
+
+            if isinstance(child, str):
+
+                text_widget.insert(
+                    END,
+                    child,
+                    tag_name
+                )
+
+            else:
+
+                insert_odt_node(
+                    text_widget,
+                    document,
+                    child,
+                    properties
+                )
+
+        return
+
+    # --------------------------------------------------------
+    # Generic element
+    # --------------------------------------------------------
+
+    for child in getattr(
+        node,
+        "childNodes",
+        []
+    ):
+
+        if isinstance(child, str):
+
+            tag_name = (
+                f"style_{id(node)}"
+            )
+
+            configure_text_tag(
+                text_widget,
+                tag_name,
+                properties
+            )
+
+            text_widget.insert(
+                END,
+                child,
+                tag_name
+            )
+
+        else:
+
+            insert_odt_node(
+                text_widget,
+                document,
+                child,
+                properties
+            )
+
+
+# ============================================================
+# Load ODT book
+# ============================================================
+
+def load_odt_book(file_path):
+    """
+    Read an ODT/FODT file and return its document.
+    """
+
+    return load(
+        str(file_path)
+    )
+
+
+def get_book_title(document, file_path):
+    """
+    Get the book title.
+
+    Priority:
+    1. First heading
+    2. First paragraph
+    3. Filename
+    """
+
+    try:
+
+        headings = document.getElementsByType(H)
+
+        if headings:
+
+            title = get_element_text(
+                headings[0]
+            ).strip()
+
+            if title:
+                return title
+
+    except Exception:
+        pass
+
+    try:
+
+        paragraphs = document.getElementsByType(P)
+
+        if paragraphs:
+
+            title = get_element_text(
+                paragraphs[0]
+            ).strip()
+
+            if title:
+                return title
+
+    except Exception:
+        pass
+
+    return file_path.stem.replace(
+        "_",
+        " "
+    ).title()
+
+
+# ============================================================
+# Read book directory
+# ============================================================
+
+def scan_books():
+    """
+    Scan the books directory.
+
+    Supported:
+        .odt
+        .fodt
+        .odf
+    """
+
+    global books
+    global book_files
+
+    BOOKS_FOLDER.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    new_books = {}
+    new_files = {}
+
+    supported_extensions = {
+        ".odt",
+        ".fodt",
+        ".odf"
+    }
+
+    for file_path in sorted(
+        BOOKS_FOLDER.iterdir()
+    ):
+
+        if not file_path.is_file():
+            continue
+
+        if file_path.suffix.lower() not in supported_extensions:
+            continue
+
+        try:
+
+            document = load_odt_book(
+                file_path
+            )
+
+            title = get_book_title(
+                document,
+                file_path
+            )
+
+            # Make duplicate titles unique
+            original_title = title
+            counter = 2
+
+            while title in new_books:
+
+                title = (
+                    f"{original_title} "
+                    f"({counter})"
+                )
+
+                counter += 1
+
+            new_books[title] = document
+            new_files[title] = file_path
+
+        except Exception as error:
+
+            print(
+                f"Could not load {file_path}: "
+                f"{error}"
+            )
+
+    books = new_books
+    book_files = new_files
+
+
+# ============================================================
+# Library signature
+# ============================================================
+
+def get_library_signature():
+    """
+    Generate a signature based on filenames and modification
+    times.
+
+    If anything changes, the library automatically refreshes.
+    """
+
+    BOOKS_FOLDER.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    files = []
+
+    for file_path in BOOKS_FOLDER.iterdir():
+
+        if (
+            file_path.is_file()
+            and file_path.suffix.lower()
+            in {".odt", ".fodt", ".odf"}
+        ):
+
+            try:
+
+                files.append(
+                    (
+                        file_path.name,
+                        file_path.stat().st_mtime_ns,
+                        file_path.stat().st_size
+                    )
+                )
+
+            except OSError:
+                pass
+
+    return tuple(
+        sorted(files)
+    )
+
+
+# ============================================================
+# Open book
+# ============================================================
+
+def open_book(title):
+    """Open a selected book."""
+
+    document = books.get(title)
+
+    if document is None:
+        return
+
+    file_path = book_files.get(
+        title
+    )
+
+    if file_path is None:
+        return
+
+    book_window = Toplevel(
+        window
+    )
+
+    book_window.title(
+        f"Kwiddle - {title}"
+    )
+
+    book_window.geometry(
+        "800x700"
+    )
+
+    book_window.minsize(
+        450,
+        400
+    )
+
+    # --------------------------------------------------------
+    # Resizable vertical layout
     # --------------------------------------------------------
 
     reader_pane = PanedWindow(
@@ -350,7 +718,7 @@ def book(bookname, content):
     )
 
     # --------------------------------------------------------
-    # Text pane
+    # Text area
     # --------------------------------------------------------
 
     text_frame = Frame(
@@ -358,23 +726,22 @@ def book(bookname, content):
     )
 
     # --------------------------------------------------------
-    # Navigation pane
+    # Navigation
     # --------------------------------------------------------
 
     navigation_frame = Frame(
-        reader_pane,
-        height=70
+        book_window
     )
 
     reader_pane.add(
         text_frame,
-        minsize=200,
+        minsize=250,
         stretch="always"
     )
 
     reader_pane.add(
         navigation_frame,
-        minsize=60,
+        minsize=80,
         stretch="never"
     )
 
@@ -386,7 +753,8 @@ def book(bookname, content):
         text_frame,
         wrap="word",
         font=("Arial", 14),
-        undo=False
+        padx=20,
+        pady=20
     )
 
     text.pack(
@@ -396,10 +764,6 @@ def book(bookname, content):
         padx=(10, 0),
         pady=10
     )
-
-    # --------------------------------------------------------
-    # Scrollbar
-    # --------------------------------------------------------
 
     scrollbar = Scrollbar(
         text_frame,
@@ -419,180 +783,88 @@ def book(bookname, content):
     )
 
     # --------------------------------------------------------
-    # Page label
+    # ODT content
     # --------------------------------------------------------
 
-    page_label = Label(
-        navigation_frame,
-        text="",
-        font=("Arial", 11)
+    text.config(
+        state=NORMAL
     )
 
-    page_label.pack(
-        side=TOP,
-        pady=(5, 2)
+    text.delete(
+        "1.0",
+        END
+    )
+
+    try:
+
+        body = document.text
+
+        for child in body.childNodes:
+
+            if isinstance(child, Element):
+
+                insert_odt_node(
+                    text,
+                    document,
+                    child
+                )
+
+    except Exception as error:
+
+        text.insert(
+            END,
+            "Could not display this book.\n\n"
+            f"{error}"
+        )
+
+    text.config(
+        state=DISABLED
+    )
+
+    text.see(
+        "1.0"
     )
 
     # --------------------------------------------------------
     # Navigation buttons
     # --------------------------------------------------------
 
-    button_frame = Frame(
-        navigation_frame
+    Button(
+        navigation_frame,
+        text="Close",
+        command=book_window.destroy,
+        height=2,
+        width=12
+    ).pack(
+        side=LEFT,
+        padx=15,
+        pady=10
     )
 
-    button_frame.pack(
-        fill=X,
+    Label(
+        navigation_frame,
+        text=title,
+        font=("Arial", 12, "bold")
+    ).pack(
+        side=LEFT,
         expand=True
     )
 
-    # --------------------------------------------------------
-    # Update page
-    # --------------------------------------------------------
-
-    def display_page():
-
-        text.config(
-            state=NORMAL
-        )
-
-        text.delete(
-            "1.0",
-            END
-        )
-
-        insert_formatted_text(
-            text,
-            cleaned_content[current_page[0]]
-        )
-
-        text.config(
-            state=DISABLED
-        )
-
-        text.see(
-            "1.0"
-        )
-
-        page_label.config(
-            text=f"Page {current_page[0] + 1} / {len(cleaned_content)}"
-        )
-
-        # Disable Previous on first page
-        if current_page[0] == 0:
-            previous_button.config(
-                state=DISABLED
-            )
-        else:
-            previous_button.config(
-                state=NORMAL
-            )
-
-        # Disable Next on last page
-        if current_page[0] >= len(cleaned_content) - 1:
-            next_button.config(
-                state=DISABLED
-            )
-        else:
-            next_button.config(
-                state=NORMAL
-            )
-
-    # --------------------------------------------------------
-    # Previous page
-    # --------------------------------------------------------
-
-    def previous_page():
-
-        if current_page[0] > 0:
-            current_page[0] -= 1
-            display_page()
-
-    # --------------------------------------------------------
-    # Next page
-    # --------------------------------------------------------
-
-    def next_page():
-
-        if current_page[0] < len(cleaned_content) - 1:
-            current_page[0] += 1
-            display_page()
-
-        else:
-            messagebox.showinfo(
-                parent=book_window,
-                title="Bookreader",
-                message="Book Completed"
-            )
-
-    # --------------------------------------------------------
-    # Previous button
-    # --------------------------------------------------------
-
-    previous_button = Button(
-        button_frame,
-        text="Previous",
-        command=previous_page,
+    Button(
+        navigation_frame,
+        text="Top",
+        command=lambda: text.see("1.0"),
         height=2,
         width=12
-    )
-
-    previous_button.pack(
-        side=LEFT,
-        padx=10,
-        pady=5
-    )
-
-    # --------------------------------------------------------
-    # Next button
-    # --------------------------------------------------------
-
-    next_button = Button(
-        button_frame,
-        text="Next",
-        command=next_page,
-        height=2,
-        width=12
-    )
-
-    next_button.pack(
+    ).pack(
         side=RIGHT,
-        padx=10,
-        pady=5
-    )
-
-    # --------------------------------------------------------
-    # Initial page
-    # --------------------------------------------------------
-
-    display_page()
-
-    # --------------------------------------------------------
-    # Close book
-    # --------------------------------------------------------
-
-    def close_book():
-        book_window.destroy()
-
-    book_window.protocol(
-        "WM_DELETE_WINDOW",
-        close_book
+        padx=15,
+        pady=10
     )
 
 
 # ============================================================
-# Load books.json
-# ============================================================
-
-books_file = "./src/kwiddle/books.json"
-
-books = load_books(
-    books_file
-)
-
-
-# ============================================================
-# Main Window UI
+# Main library UI
 # ============================================================
 
 title_label = Label(
@@ -607,14 +879,14 @@ title_label.pack(
 
 
 # ------------------------------------------------------------
-# Scrollable book list
+# Library frame
 # ------------------------------------------------------------
 
-book_list_frame = Frame(
+library_frame = Frame(
     window
 )
 
-book_list_frame.pack(
+library_frame.pack(
     fill=BOTH,
     expand=True,
     padx=15,
@@ -622,24 +894,17 @@ book_list_frame.pack(
 )
 
 canvas = Canvas(
-    book_list_frame
+    library_frame
 )
 
 scrollbar = Scrollbar(
-    book_list_frame,
+    library_frame,
     orient=VERTICAL,
     command=canvas.yview
 )
 
 scrollable_frame = Frame(
     canvas
-)
-
-scrollable_frame.bind(
-    "<Configure>",
-    lambda event: canvas.configure(
-        scrollregion=canvas.bbox("all")
-    )
 )
 
 canvas_window = canvas.create_window(
@@ -665,86 +930,175 @@ scrollbar.pack(
 
 
 # ============================================================
-# Automatically create a button for every book
+# Canvas resizing
 # ============================================================
 
-for book_id, book_content in books.items():
+def resize_scroll_region(event=None):
 
-    # Get a readable name from the ID
-    display_name = book_id.replace(
-        "_",
-        " "
-    ).title()
+    canvas.configure(
+        scrollregion=canvas.bbox(
+            "all"
+        )
+    )
 
-    # Try to get the actual title from [title]
-    if isinstance(book_content, list):
+    canvas.itemconfigure(
+        canvas_window,
+        width=canvas.winfo_width()
+    )
 
-        for item in book_content:
 
-            if isinstance(item, str):
+scrollable_frame.bind(
+    "<Configure>",
+    resize_scroll_region
+)
 
-                match = re.match(
-                    r"^\[title\](.*)$",
-                    item,
-                    re.IGNORECASE
-                )
+canvas.bind(
+    "<Configure>",
+    resize_scroll_region
+)
 
-                if match:
-                    display_name = match.group(1).strip()
-                    break
 
-                # Also support [title]Title[/title]
-                match = re.match(
-                    r"^\[title\](.*?)\[/title\]$",
-                    item,
-                    re.IGNORECASE | re.DOTALL
-                )
+# ============================================================
+# Create book buttons
+# ============================================================
 
-                if match:
-                    display_name = match.group(1).strip()
-                    break
+def rebuild_book_buttons():
 
-    # --------------------------------------------------------
-    # Create button
-    # --------------------------------------------------------
+    global book_buttons
 
-    def open_book(
-        book_name=display_name,
-        book_data=book_content
-    ):
-        book(
-            book_name,
-            book_data
+    # Remove existing buttons
+    for button in book_buttons.values():
+
+        try:
+            button.destroy()
+        except Exception:
+            pass
+
+    book_buttons = {}
+
+    # No books
+    if not books:
+
+        Label(
+            scrollable_frame,
+            text="No books found.\n\n"
+                 "Put .odt, .fodt or .odf files in:\n"
+                 f"{BOOKS_FOLDER}",
+            font=("Arial", 12),
+            justify="center"
+        ).pack(
+            pady=30
         )
 
-    Button(
-        scrollable_frame,
-        text=display_name,
-        command=open_book,
-        height=3,
-        width=25
-    ).pack(
-        pady=5
+        return
+
+    # Create button for every book
+    for title in books:
+
+        button = Button(
+            scrollable_frame,
+            text=title,
+            command=lambda name=title: open_book(name),
+            height=3,
+            width=30
+        )
+
+        button.pack(
+            pady=5
+        )
+
+        book_buttons[title] = button
+
+
+# ============================================================
+# Automatic library update
+# ============================================================
+
+def auto_update():
+
+    global library_signature
+
+    try:
+
+        current_signature = (
+            get_library_signature()
+        )
+
+        if current_signature != library_signature:
+
+            library_signature = (
+                current_signature
+            )
+
+            scan_books()
+
+            # Update Tkinter from the main thread
+            window.after(
+                0,
+                rebuild_book_buttons
+            )
+
+    except Exception as error:
+
+        print(
+            f"Automatic library update error: {error}"
+        )
+
+    # Check again
+    window.after(
+        AUTO_UPDATE_INTERVAL,
+        auto_update
     )
 
 
 # ============================================================
-# No books message
+# Mouse-wheel scrolling
 # ============================================================
 
-if not books:
+def mousewheel(event):
 
-    Label(
-        scrollable_frame,
-        text="No books found.",
-        font=("Arial", 14)
-    ).pack(
-        pady=20
+    canvas.yview_scroll(
+        int(-1 * (event.delta / 120)),
+        "units"
     )
 
 
+canvas.bind_all(
+    "<MouseWheel>",
+    mousewheel
+)
+
+
 # ============================================================
-# Start Application
+# Start library
+# ============================================================
+
+BOOKS_FOLDER.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+scan_books()
+
+library_signature = (
+    get_library_signature()
+)
+
+rebuild_book_buttons()
+
+
+# ============================================================
+# Start automatic updates
+# ============================================================
+
+window.after(
+    AUTO_UPDATE_INTERVAL,
+    auto_update
+)
+
+
+# ============================================================
+# Start application
 # ============================================================
 
 mainloop()
