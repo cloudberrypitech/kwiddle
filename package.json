@@ -20,23 +20,5 @@
   "bugs": {
     "url": "https://github.com/cloudberrypitech/kwiddle/issues"
   },
-  "homepage": "https://github.com/cloudberrypitech/kwiddle#readme",
-  "devDependencies": {
-    "prettier": "^3.9.9"
-  }
-  {
-  "name": "kwiddle",
-  "version": "0.1.0",
-  /* … other fields … */
-  "devDependencies": {
-    "prettier": "^2.8.8",
-    "@prettier/plugin-python": "^0.19.1"
-  },
-  "allowScripts": {
-    "allow": [
-      "@prettier/plugin-python",
-      "prettier"
-    ]
-  }
-}
+  "homepage": "https://github.com/cloudberrypitech/kwiddle#readme"
 }
