@@ -5,7 +5,6 @@ from pathlib import Path
 import re
 import threading
 import time
-
 from odf import teletype
 from odf.opendocument import load
 from odf.text import P, H, Span
