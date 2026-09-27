@@ -11,8 +11,12 @@ dependencies = [
     "pyfiglet (>=1.0.4,<2.0.0)",
     "auto-py-to-exe (>=2.50.1,<3.0.0)",
     "pyttsx3 (>=2.99,<3.0)",
+<<<<<<< HEAD
     "prettier (>=0.0.7,<0.0.8)",
     "ruff (>=0.16.9,<0.17.0)"
+=======
+    "odfpy (>=1.4.1,<2.0.0)"
+>>>>>>> 3a2d2de (Fixed Errors)
 ]
 
 [tool.poetry]
