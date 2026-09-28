@@ -3,7 +3,8 @@
   "indentWidth": 2,
   "useTabs": false,
   "plugins": [
-    "https://plugins.dprint.dev/typescript-0.95.5.wasm"
+    "https://plugins.dprint.dev/typescript-0.95.5.wasm",
+    "https://plugins.dprint.dev/ruff-0.8.9.wasm"
   ],
   "typescript": {
     "semiColons": "always",
