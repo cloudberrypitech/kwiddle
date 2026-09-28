@@ -2,9 +2,11 @@
   "lineWidth": 100,
   "indentWidth": 2,
   "useTabs": false,
-  "semiColons": true,
-  "singleQuote": true,
   "plugins": [
     "https://plugins.dprint.dev/typescript-0.95.5.wasm"
-  ]
+  ],
+  "typescript": {
+    "semiColons": "always",
+    "quoteStyle": "alwaysSingle"
+  }
 }
