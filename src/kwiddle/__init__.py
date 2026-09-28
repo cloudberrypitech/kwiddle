@@ -64,8 +64,7 @@ book_files = {}
 book_buttons = {}
 
 empty_library_label = None
-library_count_label = None
-
+library_count_label = Label()
 library_signature = None
 
 
@@ -532,7 +531,7 @@ def configure_text_tag(
         False,
     ):
         options["underline"] = True
-
+        
     alignment = properties.get(
         "align"
     )
@@ -2433,10 +2432,6 @@ mainloop()
         auto_update,
     )
 
-
-# ============================================================
-# MAIN
-# ============================================================
 
 def main():
 
