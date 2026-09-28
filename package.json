@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "kwiddle",
   "version": "1.0.0",
   "description": "",
@@ -21,4 +22,13 @@
     "url": "https://github.com/cloudberrypitech/kwiddle/issues"
   },
   "homepage": "https://github.com/cloudberrypitech/kwiddle#readme"
+=======
+  "devDependencies": {
+<<<<<<< Updated upstream
+    "prettier": "3.9.9"
+=======
+    "prettier": "^3.9.9"
+>>>>>>> Stashed changes
+  }
+>>>>>>> prettier-files
 }
