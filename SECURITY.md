@@ -6,9 +6,9 @@ Security updates are provided for actively maintained releases of Kwiddle.
 
 | Version                           | Supported      |
 | --------------------------------- | -------------- |
-| Latest release                    | ✅              |
+| Latest release                    | ✅             |
 | Older releases                    | ⚠️ Best effort |
-| Unreleased / development versions | ❌              |
+| Unreleased / development versions | ❌             |
 
 Users are encouraged to use the latest available version of Kwiddle when possible.
 
@@ -26,13 +26,13 @@ If private vulnerability reporting is unavailable, please contact the Kwiddle ma
 
 When reporting a vulnerability, please include as much of the following information as possible:
 
-* A clear description of the vulnerability.
-* The affected Kwiddle version or commit.
-* The affected operating system and environment.
-* Steps required to reproduce the issue.
-* A minimal proof of concept, if applicable.
-* The potential security impact.
-* Any suggested mitigation or fix, if known.
+- A clear description of the vulnerability.
+- The affected Kwiddle version or commit.
+- The affected operating system and environment.
+- Steps required to reproduce the issue.
+- A minimal proof of concept, if applicable.
+- The potential security impact.
+- Any suggested mitigation or fix, if known.
 
 Please avoid including passwords, private keys, access tokens, personal information, or other sensitive data in a report.
 
@@ -40,11 +40,11 @@ Please avoid including passwords, private keys, access tokens, personal informat
 
 We aim to:
 
-* Acknowledge a security report within **7 days**.
-* Investigate and assess the reported issue as soon as reasonably possible.
-* Keep the reporter informed when significant progress is made.
-* Release a fix or mitigation when practical and appropriate.
-* Coordinate public disclosure with the reporter when the vulnerability has been confirmed.
+- Acknowledge a security report within **7 days**.
+- Investigate and assess the reported issue as soon as reasonably possible.
+- Keep the reporter informed when significant progress is made.
+- Release a fix or mitigation when practical and appropriate.
+- Coordinate public disclosure with the reporter when the vulnerability has been confirmed.
 
 These are target timelines rather than guarantees. Response times may vary depending on the complexity and severity of the issue.
 
@@ -54,12 +54,12 @@ Please allow the maintainers reasonable time to investigate and address a report
 
 Security researchers are asked to:
 
-* Avoid accessing, modifying, deleting, or exposing data that does not belong to them.
-* Avoid disrupting services or systems used by other users.
-* Avoid testing against other people's devices, accounts, or data.
-* Avoid intentionally degrading the availability or performance of Kwiddle or related infrastructure.
-* Stop testing if you encounter sensitive information that is not necessary to demonstrate the vulnerability.
-* Keep vulnerability details private until an appropriate disclosure date has been agreed upon.
+- Avoid accessing, modifying, deleting, or exposing data that does not belong to them.
+- Avoid disrupting services or systems used by other users.
+- Avoid testing against other people's devices, accounts, or data.
+- Avoid intentionally degrading the availability or performance of Kwiddle or related infrastructure.
+- Stop testing if you encounter sensitive information that is not necessary to demonstrate the vulnerability.
+- Keep vulnerability details private until an appropriate disclosure date has been agreed upon.
 
 Good-faith security research is appreciated, and we will make reasonable efforts to work with researchers to understand and resolve legitimate vulnerabilities.
 
@@ -73,10 +73,10 @@ Third-party dependencies, operating systems, hardware, external services, and un
 
 When appropriate, confirmed security vulnerabilities may result in:
 
-* A patched release.
-* A security advisory.
-* Updated documentation or mitigation guidance.
-* A CVE or other vulnerability identifier, where appropriate and available.
+- A patched release.
+- A security advisory.
+- Updated documentation or mitigation guidance.
+- A CVE or other vulnerability identifier, where appropriate and available.
 
 Public disclosure will generally occur after a fix or reasonable mitigation is available.
 

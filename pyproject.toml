@@ -3,7 +3,7 @@ name = "kwiddle"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "CloudberryPiTech",email = "bubblesbakale@outlook.com"}
+    {name = "CloudberryPiTech",email = "bubblesbakale1@outlook.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.13,<3.16"
