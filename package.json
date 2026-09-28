@@ -1,12 +1,24 @@
 {
-    "name": "kwiddle",
-    "version": "1.0.0",
-    "scripts": {
-        "format": "ruff format . && prettier --write .",
-        "format:check": "ruff format --check . && prettier --check ."
-    },
-    "devDependencies": {
-        "prettier": "^3.6.2"
-    },
-    "homepage": "https://github.com/cloudberrypitech/kwiddle#readme"
+  "name": "kwiddle",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cloudberrypitech/kwiddle.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/cloudberrypitech/kwiddle/issues"
+  },
+  "homepage": "https://github.com/cloudberrypitech/kwiddle#readme"
 }
