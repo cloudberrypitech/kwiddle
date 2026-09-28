@@ -1,0 +1,12 @@
+{
+    "name": "kwiddle",
+    "version": "1.0.0",
+    "scripts": {
+        "format": "ruff format . && prettier --write .",
+        "format:check": "ruff format --check . && prettier --check ."
+    },
+    "devDependencies": {
+        "prettier": "^3.6.2"
+    },
+    "homepage": "https://github.com/cloudberrypitech/kwiddle#readme"
+}
