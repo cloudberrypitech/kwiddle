@@ -22,43 +22,29 @@ from tkinter import (
     messagebox,
 )
 
-from odf import teletype
-from odf.opendocument import load
-from odf.text import P, H, Span, S, Tab, LineBreak
-from odf.style import Style
-from odf.element import Element
+from kwloader import (
+    SUPPORTED_EXTENSIONS,
+    BookDocument,
+    TextBlock,
+    TextStyle,
+    load_book,
+)
 
-
-# ============================================================
-# GLOBAL SETTINGS
-# ============================================================
 
 window = None
 
 REPO_URL = "https://github.com/cloudberrypitech/kwiddle"
-
 BOOKS_FOLDER = Path(__file__).resolve().parent / "books"
-
 AUTO_UPDATE_INTERVAL = 2000
 
-SUPPORTED_EXTENSIONS = {
-    ".odt",
-    ".fodt",
-    ".odf",
-}
-
-books = {}
-book_files = {}
+books: dict[str, BookDocument] = {}
+book_files: dict[str, Path] = {}
 book_buttons = {}
 
 empty_library_label = None
 library_count_label = None
 library_signature = None
 
-
-# ============================================================
-# CONTRIBUTION
-# ============================================================
 
 def contribute_repo():
     answer = messagebox.askyesno(
@@ -91,529 +77,150 @@ def contribute_repo():
     )
 
 
-# ============================================================
-# ODT TEXT / STYLES
-# ============================================================
-
-def get_element_text(element):
-    """Safely extract text from an ODT element."""
-    try:
-        return teletype.extractText(element)
-    except Exception:
-        return ""
-
-
-def get_style_name(element):
-    """Return the ODT style name attached to an element."""
-    try:
-        return (
-            element.getAttribute("stylename")
-            or element.getAttribute("style-name")
-            or ""
-        )
-    except Exception:
-        return ""
-
-
-def get_style_properties(document, style_name):
-    """Read common formatting information from an ODT style."""
-    properties = {
-        "bold": False,
-        "italic": False,
-        "underline": False,
-        "size": None,
-        "font": None,
-        "align": None,
-    }
-
-    if not style_name:
-        return properties
-
-    style_collections = []
-
-    for attribute_name in ("styles", "automaticstyles"):
-        collection = getattr(document, attribute_name, None)
-        if collection is not None:
-            style_collections.append(collection)
-
-    try:
-        for collection in style_collections:
-            for style in collection.getElementsByType(Style):
-                style_name_value = (
-                    style.getAttribute("name")
-                    or style.getAttribute("stylename")
-                )
-
-                if style_name_value != style_name:
-                    continue
-
-                text_properties = None
-                paragraph_properties = None
-
-                for child in getattr(style, "childNodes", []):
-                    qname = getattr(child, "qname", None)
-                    if not qname or len(qname) < 2:
-                        continue
-
-                    child_name = qname[1]
-
-                    if child_name == "text-properties":
-                        text_properties = child
-                    elif child_name == "paragraph-properties":
-                        paragraph_properties = child
-
-                if text_properties is not None:
-                    font_weight = (
-                        text_properties.getAttribute("fontweight")
-                        or text_properties.getAttribute("font-weight")
-                    )
-                    font_style = (
-                        text_properties.getAttribute("fontstyle")
-                        or text_properties.getAttribute("font-style")
-                    )
-                    underline = (
-                        text_properties.getAttribute("textunderlinestyle")
-                        or text_properties.getAttribute("text-underline-style")
-                    )
-                    font_size = (
-                        text_properties.getAttribute("fontsize")
-                        or text_properties.getAttribute("font-size")
-                    )
-                    font_name = (
-                        text_properties.getAttribute("fontfamily")
-                        or text_properties.getAttribute("font-family")
-                    )
-
-                    if font_weight:
-                        properties["bold"] = str(font_weight).lower() in {
-                            "bold",
-                            "700",
-                            "800",
-                            "900",
-                        }
-
-                    if font_style:
-                        properties["italic"] = str(font_style).lower() in {
-                            "italic",
-                            "oblique",
-                        }
-
-                    if underline:
-                        properties["underline"] = str(underline).lower() not in {
-                            "",
-                            "none",
-                        }
-
-                    if font_size:
-                        properties["size"] = font_size
-
-                    if font_name:
-                        properties["font"] = font_name
-
-                if paragraph_properties is not None:
-                    alignment = (
-                        paragraph_properties.getAttribute("textalign")
-                        or paragraph_properties.getAttribute("text-align")
-                    )
-
-                    if alignment:
-                        properties["align"] = str(alignment).lower()
-
-                return properties
-
-    except Exception:
-        pass
-
-    return properties
-
-
-# ============================================================
-# FONT CONVERSION
-# ============================================================
-
 def size_to_tk(size):
-    """Convert ODT size units into Tkinter font points."""
+    """Convert a point size into a Tkinter font size."""
     if not size:
         return 14
 
     try:
-        value = str(size).strip().lower()
-
-        if value.endswith("pt"):
-            return max(
-                6,
-                int(round(float(value[:-2]))),
-            )
-
-        if value.endswith("px"):
-            return max(
-                6,
-                int(round(float(value[:-2]) * 0.75)),
-            )
-
-        if value.endswith("cm"):
-            return max(
-                6,
-                int(round(float(value[:-2]) * 28.346)),
-            )
-
-        if value.endswith("mm"):
-            return max(
-                6,
-                int(round(float(value[:-2]) * 2.8346)),
-            )
-
+        return max(6, int(round(float(size))))
     except Exception:
-        pass
-
-    return 14
+        return 14
 
 
-def make_font(properties):
-    """Create a Tkinter font tuple."""
-    font_name = properties.get("font") or "Arial"
-    size = size_to_tk(properties.get("size"))
-    bold = properties.get("bold", False)
-    italic = properties.get("italic", False)
+def make_font(style: TextStyle):
+    font_name = style.font or "Arial"
+    size = size_to_tk(style.size)
 
-    if bold and italic:
-        weight = "bold"
-        slant = "italic"
-    elif bold:
-        weight = "bold"
-        slant = "roman"
-    elif italic:
-        weight = "normal"
-        slant = "italic"
-    else:
-        weight = "normal"
-        slant = "roman"
+    if style.bold and style.italic:
+        return (font_name, size, "bold", "italic")
+    if style.bold:
+        return (font_name, size, "bold", "roman")
+    if style.italic:
+        return (font_name, size, "normal", "italic")
 
-    return (font_name, size, weight, slant)
+    return (font_name, size, "normal", "roman")
 
 
-def configure_text_tag(text_widget, tag_name, properties):
-    """Configure a Tkinter Text formatting tag."""
+def configure_text_tag(text_widget, tag_name, style, align=None):
     options = {
-        "font": make_font(properties),
+        "font": make_font(style),
     }
 
-    if properties.get("underline", False):
+    if style.underline:
         options["underline"] = True
 
-    alignment = properties.get("align")
-
-    if alignment == "center":
+    if align == "center":
         options["justify"] = "center"
-    elif alignment == "right":
+    elif align == "right":
         options["justify"] = "right"
-    elif alignment == "left":
+    elif align == "left":
+        options["justify"] = "left"
+    elif align == "justify":
         options["justify"] = "left"
 
     text_widget.tag_configure(tag_name, **options)
 
 
-# ============================================================
-# ODF ELEMENT CHECKING
-# ============================================================
-
-def is_odf_element(node, *factories):
-    """Check whether an ODT node matches a given ODF type."""
-    if node is None:
-        return False
-
-    node_qname = getattr(node, "qname", None)
-
-    if node_qname is None:
-        return False
-
-    for factory in factories:
-        try:
-            candidate = factory(check_grammar=False)
-
-            if getattr(candidate, "qname", None) == node_qname:
-                return True
-        except Exception:
-            continue
-
-    return False
-
-
-# ============================================================
-# ODT RENDERING
-# ============================================================
-
-def insert_odt_node(text_widget, document, node, inherited=None):
+def insert_block(text_widget, block: TextBlock):
     """
-    Render an ODT node into a Tkinter Text widget.
+    Render one kwloader TextBlock into a Tkinter Text widget.
 
-    Supports:
-    - headings
-    - paragraphs
-    - spans
-    - bold
-    - italic
-    - underline
-    - font family
-    - font size
-    - alignment
-    - tabs
-    - line breaks
-    - spaces
+    All document-format-specific parsing has already happened in kwloader.
     """
-    if inherited is None:
-        inherited = {
-            "bold": False,
-            "italic": False,
-            "underline": False,
-            "size": None,
-            "font": None,
-            "align": None,
-        }
-
-    if isinstance(node, str):
-        if node:
-            text_widget.insert(END, node)
-        return
-
-    properties = inherited.copy()
-    style_name = get_style_name(node)
-
-    if style_name:
-        style_properties = get_style_properties(document, style_name)
-
-        for key, value in style_properties.items():
-            if value is not None:
-                properties[key] = value
-
-    if is_odf_element(node, P, H):
-        tag_name = f"odt_style_{id(node)}"
-        configure_text_tag(
-            text_widget,
-            tag_name,
-            properties,
+    if block.kind == "heading":
+        default_style = TextStyle(
+            bold=True,
+            size=18,
+        )
+    else:
+        default_style = TextStyle(
+            size=14,
         )
 
-        for child in getattr(node, "childNodes", []):
-            if isinstance(child, Element):
-                insert_odt_node(
-                    text_widget,
-                    document,
-                    child,
-                    properties,
-                )
-            else:
-                text_value = str(child)
-                if text_value:
-                    text_widget.insert(
-                        END,
-                        text_value,
-                        tag_name,
-                    )
-
-        text_widget.insert(
-            END,
-            "\n\n",
-            tag_name,
-        )
-        return
-
-    if is_odf_element(node, Span):
-        tag_name = f"odt_style_{id(node)}"
-        configure_text_tag(
-            text_widget,
-            tag_name,
-            properties,
-        )
-
-        for child in getattr(node, "childNodes", []):
-            if isinstance(child, Element):
-                insert_odt_node(
-                    text_widget,
-                    document,
-                    child,
-                    properties,
-                )
-            else:
-                text_value = str(child)
-                if text_value:
-                    text_widget.insert(
-                        END,
-                        text_value,
-                        tag_name,
-                    )
-
-        return
-
-    if is_odf_element(node, S):
-        tag_name = f"odt_style_{id(node)}"
-        configure_text_tag(
-            text_widget,
-            tag_name,
-            properties,
-        )
-
-        try:
-            count = int(node.getAttribute("c") or 1)
-        except Exception:
-            count = 1
-
-        text_widget.insert(
-            END,
-            " " * max(1, count),
-            tag_name,
-        )
-        return
-
-    if is_odf_element(node, Tab):
-        tag_name = f"odt_style_{id(node)}"
-        configure_text_tag(
-            text_widget,
-            tag_name,
-            properties,
-        )
-
-        text_widget.insert(
-            END,
-            "\t",
-            tag_name,
-        )
-        return
-
-    if is_odf_element(node, LineBreak):
-        tag_name = f"odt_style_{id(node)}"
-        configure_text_tag(
-            text_widget,
-            tag_name,
-            properties,
-        )
-
-        text_widget.insert(
-            END,
-            "\n",
-            tag_name,
-        )
-        return
-
-    for child in getattr(node, "childNodes", []):
-        if isinstance(child, Element):
-            insert_odt_node(
-                text_widget,
-                document,
-                child,
-                properties,
-            )
-        else:
-            text_value = str(child)
-            if text_value:
-                text_widget.insert(
-                    END,
-                    text_value,
-                )
-
-
-# ============================================================
-# LOAD ODT
-# ============================================================
-
-def load_odt_book(file_path):
-    """Load one ODT/FODT/ODF file."""
-    file_path = Path(file_path).resolve()
-
-    if not file_path.exists():
-        raise FileNotFoundError(
-            f"File does not exist: {file_path}"
-        )
-
-    if not file_path.is_file():
-        raise ValueError(
-            f"Path is not a file: {file_path}"
-        )
-
-    print(
-        f"[Kwiddle] Loading book: "
-        f"{file_path}"
+    block_style = TextStyle(
+        bold=default_style.bold,
+        italic=default_style.italic,
+        underline=default_style.underline,
+        size=default_style.size,
+        font=default_style.font,
     )
 
-    try:
-        document = load(str(file_path))
-    except Exception as error:
-        raise RuntimeError(
-            f"Could not parse "
-            f"{file_path.name}: "
-            f"{type(error).__name__}: "
-            f"{error}"
-        ) from error
+    for index, run in enumerate(block.runs):
+        style = run.style
 
+        # A missing/zero value falls back to the block's readable default.
+        effective = TextStyle(
+            bold=style.bold or block_style.bold,
+            italic=style.italic or block_style.italic,
+            underline=style.underline or block_style.underline,
+            size=style.size if style.size is not None else block_style.size,
+            font=style.font or block_style.font,
+        )
+
+        tag_name = f"kwloader_{id(block)}_{index}"
+        configure_text_tag(
+            text_widget,
+            tag_name,
+            effective,
+            block.align,
+        )
+
+        text_widget.insert(END, run.text, tag_name)
+
+    # Keep paragraph separation similar to the previous ODT renderer.
+    text_widget.insert(END, "\n\n")
+
+
+def build_document_pages(document: BookDocument):
+    """
+    Split a loaded document into readable pages.
+
+    Pagination is deliberately kept in kwiddle because it is a UI concern,
+    not a document-format concern.
+    """
     if document is None:
-        raise RuntimeError(
-            f"ODT loader returned no "
-            f"document for {file_path.name}"
+        return [[]]
+
+    blocks = [
+        block
+        for block in document.blocks
+        if block.text.strip()
+    ]
+
+    if not blocks:
+        return [[]]
+
+    pages = []
+    current_page = []
+    current_chars = 0
+
+    max_blocks = 8
+    max_characters = 1800
+
+    for block in blocks:
+        block_text = block.text.strip()
+
+        would_overflow = bool(current_page) and (
+            len(current_page) >= max_blocks
+            or current_chars + len(block_text) > max_characters
         )
 
-    print(
-        f"[Kwiddle] Loaded successfully: "
-        f"{file_path.name}"
-    )
+        if would_overflow:
+            pages.append(current_page)
+            current_page = []
+            current_chars = 0
 
-    return document
+        current_page.append(block)
+        current_chars += len(block_text)
 
+    if current_page:
+        pages.append(current_page)
 
-# ============================================================
-# BOOK TITLE
-# ============================================================
+    return pages or [[]]
 
-def get_book_title(document, file_path):
-    """
-    Determine the button title.
-
-    Priority:
-    1. First heading
-    2. First paragraph
-    3. Filename
-    """
-    try:
-        headings = document.getElementsByType(H)
-
-        for heading in headings:
-            title = get_element_text(heading).strip()
-
-            if title:
-                return title
-    except Exception:
-        pass
-
-    try:
-        paragraphs = document.getElementsByType(P)
-
-        for paragraph in paragraphs:
-            title = get_element_text(paragraph).strip()
-
-            if title:
-                return title
-    except Exception:
-        pass
-
-    return (
-        Path(file_path)
-        .stem
-        .replace("_", " ")
-        .replace("-", " ")
-        .title()
-    )
-
-
-# ============================================================
-# SCAN ALL BOOKS
-# ============================================================
 
 def scan_books():
-    """
-    Find every supported book in the books directory.
-
-    Files can exist directly in books/ or in
-    nested subdirectories.
-    """
     global books
     global book_files
 
@@ -628,14 +235,8 @@ def scan_books():
     print()
     print("=" * 60)
     print("[Kwiddle] Scanning book library")
-    print(
-        f"[Kwiddle] Books folder: "
-        f"{BOOKS_FOLDER}"
-    )
-    print(
-        f"[Kwiddle] Folder exists: "
-        f"{BOOKS_FOLDER.exists()}"
-    )
+    print(f"[Kwiddle] Books folder: {BOOKS_FOLDER}")
+    print(f"[Kwiddle] Folder exists: {BOOKS_FOLDER.exists()}")
     print("=" * 60)
 
     all_files = sorted(
@@ -660,72 +261,40 @@ def scan_books():
 
         found_count += 1
 
-        print(
-            f"[Kwiddle] Found book: "
-            f"{file_path}"
-        )
+        print(f"[Kwiddle] Found book: {file_path}")
 
         try:
-            document = load_odt_book(file_path)
-            title = get_book_title(
-                document,
-                file_path,
-            )
-
-            if not title:
-                title = file_path.stem
+            document = load_book(file_path)
+            title = document.title or file_path.stem
 
             original_title = title
             number = 2
 
             while title in new_books:
-                title = (
-                    f"{original_title} "
-                    f"({number})"
-                )
+                title = f"{original_title} ({number})"
                 number += 1
 
             new_books[title] = document
             new_files[title] = file_path
 
-            print(
-                f"[Kwiddle] Book ready: "
-                f"{title}"
-            )
+            print(f"[Kwiddle] Book ready: {title}")
 
         except Exception as error:
-            print(
-                f"[Kwiddle] ERROR loading "
-                f"{file_path}:"
-            )
-            print(
-                f"    {type(error).__name__}: "
-                f"{error}"
-            )
+            print(f"[Kwiddle] ERROR loading {file_path}:")
+            print(f"    {type(error).__name__}: {error}")
 
     books = new_books
     book_files = new_files
 
-    print(
-        f"[Kwiddle] Files found: "
-        f"{found_count}"
-    )
-    print(
-        f"[Kwiddle] Books loaded: "
-        f"{len(books)}"
-    )
+    print(f"[Kwiddle] Files found: {found_count}")
+    print(f"[Kwiddle] Books loaded: {len(books)}")
     print("=" * 60)
     print()
 
     return books
 
 
-# ============================================================
-# LIBRARY SIGNATURE
-# ============================================================
-
 def get_library_signature():
-    """Detect changes in the books directory."""
     BOOKS_FOLDER.mkdir(
         parents=True,
         exist_ok=True,
@@ -748,9 +317,7 @@ def get_library_signature():
 
         try:
             stat = file_path.stat()
-            relative_path = file_path.relative_to(
-                BOOKS_FOLDER
-            )
+            relative_path = file_path.relative_to(BOOKS_FOLDER)
 
             signature.append(
                 (
@@ -765,104 +332,14 @@ def get_library_signature():
     return tuple(sorted(signature))
 
 
-# ============================================================
-# BUILD DOCUMENT PAGES
-# ============================================================
-
-def build_document_pages(document):
-    """
-    Split an ODT into readable pages.
-
-    This does not modify the document.
-    """
-    if document is None:
-        return [[]]
-
-    blocks = []
-    stack = [document.text]
-
-    while stack:
-        node = stack.pop()
-
-        if node is None or not isinstance(node, Element):
-            continue
-
-        qname = getattr(node, "qname", None)
-        element_name = (
-            qname[1]
-            if qname and len(qname) >= 2
-            else None
-        )
-
-        if element_name in {"p", "h"}:
-            text_value = get_element_text(node).strip()
-
-            if text_value:
-                blocks.append(node)
-
-            continue
-
-        children = getattr(node, "childNodes", [])
-
-        for child in reversed(children):
-            if isinstance(child, Element):
-                stack.append(child)
-
-    if not blocks:
-        return [[]]
-
-    pages = []
-    current_page = []
-    current_chars = 0
-
-    max_blocks = 8
-    max_characters = 1800
-
-    for block in blocks:
-        block_text = get_element_text(block).strip()
-
-        if not block_text:
-            continue
-
-        would_overflow = (
-            bool(current_page)
-            and (
-                len(current_page) >= max_blocks
-                or current_chars + len(block_text)
-                > max_characters
-            )
-        )
-
-        if would_overflow:
-            pages.append(current_page)
-            current_page = []
-            current_chars = 0
-
-        current_page.append(block)
-        current_chars += len(block_text)
-
-    if current_page:
-        pages.append(current_page)
-
-    return pages or [[]]
-
-
-# ============================================================
-# OPEN BOOK
-# ============================================================
-
 def open_book(title):
-    """Open one selected book."""
     document = books.get(title)
 
     if document is None:
         messagebox.showerror(
             parent=window,
             title="Kwiddle",
-            message=(
-                f"Could not find the loaded "
-                f"document for:\n\n{title}"
-            ),
+            message=f"Could not find the loaded document for:\n\n{title}",
         )
         return
 
@@ -872,31 +349,16 @@ def open_book(title):
         messagebox.showerror(
             parent=window,
             title="Kwiddle",
-            message=(
-                f"Could not find the file "
-                f"for:\n\n{title}"
-            ),
+            message=f"Could not find the file for:\n\n{title}",
         )
         return
 
-    print(
-        f"[Kwiddle] Opening: "
-        f"{file_path}"
-    )
+    print(f"[Kwiddle] Opening: {file_path}")
 
     book_window = Toplevel(window)
-    book_window.title(
-        f"Kwiddle - {title}"
-    )
+    book_window.title(f"Kwiddle - {title}")
     book_window.geometry("900x700")
-    book_window.minsize(
-        500,
-        400,
-    )
-
-    # ========================================================
-    # PANED WINDOW
-    # ========================================================
+    book_window.minsize(500, 400)
 
     reader_pane = PanedWindow(
         book_window,
@@ -923,10 +385,6 @@ def open_book(title):
         minsize=75,
         stretch="never",
     )
-
-    # ========================================================
-    # TEXT AREA
-    # ========================================================
 
     text = Text(
         text_frame,
@@ -963,10 +421,6 @@ def open_book(title):
     pages = build_document_pages(document)
     current_page = 0
 
-    # ========================================================
-    # PAGE LABEL
-    # ========================================================
-
     page_label = Label(
         navigation_frame,
         font=("Arial", 12, "bold"),
@@ -975,10 +429,6 @@ def open_book(title):
         side=LEFT,
         expand=True,
     )
-
-    # ========================================================
-    # NAVIGATION
-    # ========================================================
 
     def go_previous():
         nonlocal current_page
@@ -1077,22 +527,17 @@ def open_book(title):
             if not page_blocks:
                 text.insert(
                     END,
-                    "This book contains "
-                    "no readable text.",
+                    "This book contains no readable text.",
                 )
             else:
                 for block in page_blocks:
-                    insert_odt_node(
-                        text,
-                        document,
-                        block,
-                    )
+                    insert_block(text, block)
+
         except Exception as error:
             text.insert(
                 END,
                 "Could not display this book.\n\n"
-                f"{type(error).__name__}: "
-                f"{error}",
+                f"{type(error).__name__}: {error}",
             )
 
         text.config(state=DISABLED)
@@ -1101,10 +546,6 @@ def open_book(title):
 
     render_page()
 
-
-# ============================================================
-# LIBRARY UI
-# ============================================================
 
 def build_library_ui():
     global window
@@ -1119,14 +560,7 @@ def build_library_ui():
     window = Tk()
     window.title("Kwiddle")
     window.geometry("600x650")
-    window.minsize(
-        400,
-        450,
-    )
-
-    # ========================================================
-    # HEADER
-    # ========================================================
+    window.minsize(400, 450)
 
     header = Frame(window)
     header.pack(
@@ -1138,31 +572,18 @@ def build_library_ui():
     Label(
         header,
         text="Kwiddle Books",
-        font=(
-            "Arial",
-            22,
-            "bold",
-        ),
-    ).pack(
-        side=LEFT,
-    )
+        font=("Arial", 22, "bold"),
+    ).pack(side=LEFT)
 
     library_count_label = Label(
         header,
         text="0 books",
-        font=(
-            "Arial",
-            11,
-        ),
+        font=("Arial", 11),
     )
     library_count_label.pack(
         side=RIGHT,
         pady=8,
     )
-
-    # ========================================================
-    # LIBRARY
-    # ========================================================
 
     library_frame = Frame(window)
     library_frame.pack(
@@ -1227,34 +648,14 @@ def build_library_ui():
         update_canvas,
     )
 
-    # Linux Raspberry Pi / X11 scrolling
     canvas.bind_all(
         "<Button-4>",
-        lambda event: canvas.yview_scroll(
-            -3,
-            "units",
-        ),
+        lambda event: canvas.yview_scroll(-3, "units"),
     )
     canvas.bind_all(
         "<Button-5>",
-        lambda event: canvas.yview_scroll(
-            3,
-            "units",
-        ),
+        lambda event: canvas.yview_scroll(3, "units"),
     )
-
-    if not books:
-        empty_library_label = Label(
-            scrollable_frame,
-            text=(
-                "No books found.\n\n"
-                "Put .odt, .fodt or .odf files in:\n"
-                f"{BOOKS_FOLDER}"
-            ),
-            font=("Arial", 12),
-            justify="center",
-        )
-        empty_library_label.pack(pady=30)
 
     def clear_library_widgets():
         global empty_library_label
@@ -1275,9 +676,7 @@ def build_library_ui():
 
             empty_library_label = None
 
-        for child in list(
-            scrollable_frame.winfo_children()
-        ):
+        for child in list(scrollable_frame.winfo_children()):
             try:
                 child.destroy()
             except Exception:
@@ -1292,17 +691,23 @@ def build_library_ui():
         count = len(books)
 
         if count == 0:
+            extensions = ", ".join(
+                extension.lstrip(".")
+                for extension in sorted(SUPPORTED_EXTENSIONS)
+            )
+
             empty_library_label = Label(
                 scrollable_frame,
                 text=(
                     "No books found.\n\n"
-                    "Put .odt, .fodt or .odf files in:\n"
+                    f"Put {extensions} files in:\n"
                     f"{BOOKS_FOLDER}"
                 ),
                 font=("Arial", 12),
                 justify="center",
             )
             empty_library_label.pack(pady=40)
+
         else:
             for title in books:
                 button = Button(
@@ -1315,11 +720,7 @@ def build_library_ui():
                 button.pack(pady=5)
                 book_buttons[title] = button
 
-        count_text = (
-            "1 book"
-            if count == 1
-            else f"{count} books"
-        )
+        count_text = "1 book" if count == 1 else f"{count} books"
 
         library_count_label.config(
             text=count_text,
@@ -1329,10 +730,6 @@ def build_library_ui():
             scrollregion=canvas.bbox("all"),
         )
 
-    # ========================================================
-    # INITIAL BOOK LOAD
-    # ========================================================
-
     BOOKS_FOLDER.mkdir(
         parents=True,
         exist_ok=True,
@@ -1341,12 +738,7 @@ def build_library_ui():
     scan_books()
 
     library_signature = get_library_signature()
-
     rebuild_book_buttons()
-
-    # ========================================================
-    # AUTO UPDATE
-    # ========================================================
 
     def auto_update():
         global library_signature
@@ -1356,8 +748,7 @@ def build_library_ui():
 
             if current_signature != library_signature:
                 print(
-                    "[Kwiddle] Book library "
-                    "changed. Reloading..."
+                    "[Kwiddle] Book library changed. Reloading..."
                 )
 
                 library_signature = current_signature
@@ -1366,10 +757,8 @@ def build_library_ui():
 
         except Exception as error:
             print(
-                "[Kwiddle] Automatic "
-                "library update error: "
-                f"{type(error).__name__}: "
-                f"{error}"
+                "[Kwiddle] Automatic library update error: "
+                f"{type(error).__name__}: {error}"
             )
 
         try:
@@ -1387,16 +776,9 @@ def build_library_ui():
     )
 
 
-# ============================================================
-# MAIN
-# ============================================================
-
 def main():
     build_library_ui()
     window.mainloop()
-
-
-main()
 
 
 if __name__ == "__main__":
