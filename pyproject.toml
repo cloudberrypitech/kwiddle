@@ -9,6 +9,7 @@ description = "Desktop book reader powered by kwloader"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "kwloader @ git+https://github.com/cloudberrypitech/kwloader"
 ]
 
 [tool.setuptools]
