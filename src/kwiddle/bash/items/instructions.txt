@@ -1,5 +1,0 @@
-﻿===================================================================================
-KWIDDLE - GUIDE TO OPERATIONS
-===================================================================================
-
-Thank you for using Kwiddle Book Reader, by Cloudberry Pi Foundations.
