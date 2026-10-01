@@ -1,0 +1,9 @@
+LICENSE
+README.md
+pyproject.toml
+src/kwiddle/__init__.py
+src/kwiddle.egg-info/PKG-INFO
+src/kwiddle.egg-info/SOURCES.txt
+src/kwiddle.egg-info/dependency_links.txt
+src/kwiddle.egg-info/top_level.txt
+tests/test_odf_detection.py
