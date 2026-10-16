@@ -1,4 +1,4 @@
-from subprocess import call
+import webbrowser
 from pathlib import Path
 from tkinter import (
     Tk,
@@ -29,21 +29,29 @@ from kwloader import (
     load_book,
 )
 
+
 def run():
+    global window
+    global books
+    global book_files
+    global book_buttons
+    global empty_library_label
+    global library_count_label
+    global library_signature
+
     window = None
 
     REPO_URL = "https://github.com/cloudberrypitech/kwiddle"
     BOOKS_FOLDER = Path(__file__).resolve().parent / "books"
     AUTO_UPDATE_INTERVAL = 2000
 
-    books: dict[str, BookDocument] = {}
-    book_files: dict[str, Path] = {}
+    books = {}
+    book_files = {}
     book_buttons = {}
 
     empty_library_label = None
     library_count_label = None
     library_signature = None
-
 
     def contribute_repo():
         answer = messagebox.askyesno(
@@ -56,25 +64,20 @@ def run():
             return
 
         try:
-            call(
-                f'xdg-open "{REPO_URL}"',
-                shell=True,
+            webbrowser.open(REPO_URL)
+        except Exception as error:
+            messagebox.showerror(
+                parent=window,
+                title="Contribute",
+                message=f"Could not open the repository.\n\n{error}",
             )
-        except Exception:
-            try:
-                call(
-                    f'open "{REPO_URL}"',
-                    shell=True,
-                )
-            except Exception:
-                pass
+            return
 
         messagebox.showinfo(
             parent=window,
             title="Contribute",
             message="Thank you for contributing to Kwiddle.",
         )
-
 
     def size_to_tk(size):
         """Convert a point size into a Tkinter font size."""
@@ -85,7 +88,6 @@ def run():
             return max(6, int(round(float(size))))
         except Exception:
             return 14
-
 
     def make_font(style: TextStyle):
         font_name = style.font or "Arial"
@@ -99,7 +101,6 @@ def run():
             return (font_name, size, "normal", "italic")
 
         return (font_name, size, "normal", "roman")
-
 
     def configure_text_tag(text_widget, tag_name, style, align=None):
         options = {
@@ -119,7 +120,6 @@ def run():
             options["justify"] = "left"
 
         text_widget.tag_configure(tag_name, **options)
-
 
     def insert_block(text_widget, block: TextBlock):
         """
@@ -148,7 +148,6 @@ def run():
         for index, run in enumerate(block.runs):
             style = run.style
 
-            # A missing/zero value falls back to the block's readable default.
             effective = TextStyle(
                 bold=style.bold or block_style.bold,
                 italic=style.italic or block_style.italic,
@@ -158,6 +157,7 @@ def run():
             )
 
             tag_name = f"kwloader_{id(block)}_{index}"
+
             configure_text_tag(
                 text_widget,
                 tag_name,
@@ -167,16 +167,11 @@ def run():
 
             text_widget.insert(END, run.text, tag_name)
 
-        # Keep paragraph separation similar to the previous ODT renderer.
         text_widget.insert(END, "\n\n")
-
 
     def build_document_pages(document: BookDocument):
         """
         Split a loaded document into readable pages.
-
-        Pagination is deliberately kept in kwiddle because it is a UI concern,
-        not a document-format concern.
         """
         if document is None:
             return [[]]
@@ -217,7 +212,6 @@ def run():
             pages.append(current_page)
 
         return pages or [[]]
-
 
     def scan_books():
         global books
@@ -292,7 +286,6 @@ def run():
 
         return books
 
-
     def get_library_signature():
         BOOKS_FOLDER.mkdir(
             parents=True,
@@ -329,7 +322,6 @@ def run():
                 continue
 
         return tuple(sorted(signature))
-
 
     def open_book(title):
         document = books.get(title)
@@ -545,7 +537,6 @@ def run():
 
         render_page()
 
-
     def build_library_ui():
         global window
         global library_signature
@@ -658,6 +649,7 @@ def run():
 
         def clear_library_widgets():
             global empty_library_label
+            global book_buttons
 
             for button in list(book_buttons.values()):
                 try:
@@ -774,11 +766,12 @@ def run():
             auto_update,
         )
 
-
     def main():
         build_library_ui()
         window.mainloop()
 
+    main()
+
 
 if __name__ == "__main__":
-    main()
+    run()
