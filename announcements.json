@@ -11,28 +11,10 @@
   {
     "id": 2,
     "date": "2026-10-15",
-    "title": "Version 2.0 Launch",
-    "category": "Feature",
-    "importance": "high",
-    "content": "Kwiddle 2.0 is now live with improved PNG rendering for title pages, an optimized database backend, and 40% faster load times.",
-    "link": "https://github.com/cloudberrypitech/kwiddle/releases"
-  },
-  {
-    "id": 3,
-    "date": "2026-09-20",
-    "title": "Security Patch v2.0.1",
-    "category": "Fix",
-    "importance": "medium",
-    "content": "Resolved a critical issue regarding image upload validation and sanitized input fields to prevent XSS attacks.",
-    "link": "#"
-  },
-  {
-    "id": 4,
-    "date": "2026-09-01",
-    "title": "New Support Form",
+    "title": "Kwiddle becomes 'News-Compatible`",
     "category": "Announcement",
     "importance": "low",
-    "content": "You can now request custom title pages directly through our new streamlined support form located in the footer.",
-    "link": "https://github.com/cloudberrypitech"
+    "content": "Kwiddle is going to start coming with fortnightly news updates with shortened keypoints after every 'e-newspaper'. The feature is planned to begin on 16 November 2026.",
+    "link": "https://github.com/cloudberrypitech/kwiddle/releases"
   }
 ]
