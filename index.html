@@ -1,165 +1,336 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kwiddle Updates & Announcements</title>
+    <title>Kwiddle | Project Updates</title>
     <style>
         :root {
-            --primary: #2d3436;
-            --accent: #0984e3;
-            --bg: #f5f6fa;
-            --text: #636e72;
-            --white: #ffffff;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --primary: #60a5fa;
+            --primary-hover: #93c5fd;
+            --border: #334155;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg);
-            color: var(--primary);
+            color: var(--text-main);
             margin: 0;
-            padding: 40px 20px;
+            transition: background 0.3s ease;
             line-height: 1.6;
         }
 
-        .container {
-            max-width: 800px;
+        /* Layout */
+        .app-container {
+            max-width: 1000px;
             margin: 0 auto;
+            padding: 40px 20px;
         }
 
         header {
-            text-align: center;
-            margin-bottom: 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
         }
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            color: var(--primary);
-        }
-
-        /* Latest Update Spotlight */
-        .latest-card {
-            background: var(--white);
-            border-left: 8px solid var(--accent);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-            margin-bottom: 60px;
-        }
-
-        .badge {
-            background: var(--accent);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .latest-card h2 {
-            margin: 15px 0;
+        .brand h1 {
             font-size: 1.8rem;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.025em;
         }
 
-        /* History Section */
-        .history-section h3 {
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            color: var(--text);
+        .brand p {
+            color: var(--text-muted);
+            margin: 5px 0 0 0;
         }
 
-        .history-item {
-            background: var(--white);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            transition: transform 0.2s;
-            border: 1px solid #eee;
+        /* Controls Section */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
         }
 
-        .history-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        .search-box {
+            flex-grow: 1;
+            position: relative;
         }
 
-        .item-date {
-            font-size: 0.85rem;
-            color: var(--text);
-            font-weight: bold;
-        }
-
-        .item-title {
-            display: block;
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin: 5px 0;
-        }
-
-        .item-content {
-            color: var(--text);
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-main);
             font-size: 0.95rem;
+            box-sizing: border-box;
         }
+
+        .filter-btn {
+            padding: 10px 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-main);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Settings Panel */
+        .settings-trigger {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-panel {
+            position: fixed;
+            right: -300px;
+            top: 0;
+            width: 280px;
+            height: 100%;
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            padding: 30px 20px;
+            box-sizing: border-box;
+        }
+
+        .settings-panel.open { right: 0; }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .setting-item {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Update Cards */
+        .update-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .update-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .update-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .category-tag {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: var(--border);
+            color: var(--text-muted);
+        }
+
+        .cat-feature { background: #dcfce7; color: #166534; }
+        .cat-fix { background: #fee2e2; color: #991b1b; }
+        .cat-policy { background: #fef9c3; color: #854d0e; }
+        .cat-announcement { background: #dbeafe; color: #1e40af; }
+
+        .update-date {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .update-card h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.3rem;
+        }
+
+        .update-content {
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .btn-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .btn-link:hover {
+            color: var(--primary-hover);
+        }
+
+        /* Icons */
+        .icon { width: 18px; height: 18px; vertical-align: middle; }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="app-container">
         <header>
-            <h1>Announcements</h1>
-            <p>Stay up to date with the latest from Kwiddle</p>
+            <div class="brand">
+                <h1>Kwiddle Updates</h1>
+                <p>Official project changelog and community announcements</p>
+            </div>
+            <button class="settings-trigger" onclick="toggleSettings()">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </button>
         </header>
 
-        <div id="latest-update">
-            <!-- Latest update injected here -->
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search updates..." oninput="filterUpdates()">
+            </div>
+            <button class="filter-btn active" onclick="setFilter('All', this)">All</button>
+            <button class="filter-btn" onclick="setFilter('Feature', this)">Features</button>
+            <button class="filter-btn" onclick="setFilter('Fix', this)">Fixes</button>
+            <button class="filter-btn" onclick="setFilter('Policy', this)">Policy</button>
         </div>
 
-        <div class="history-section">
-            <h3>Update History</h3>
-            <div id="history-list">
-                <!-- History items injected here -->
-            </div>
+        <div id="updateList" class="update-list">
+            <!-- Content injected via JS -->
+        </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settingsPanel" class="settings-panel">
+        <div class="settings-header">
+            <h2>Settings</h2>
+            <button class="settings-trigger" onclick="toggleSettings()">✕</button>
+        </div>
+        <div class="setting-item">
+            <span>Dark Mode</span>
+            <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+        </div>
+        <div class="setting-item">
+            <span>Auto-Refresh</span>
+            <input type="checkbox" checked disabled>
         </div>
     </div>
 
     <script>
+        let allUpdates = [];
+        let currentFilter = 'All';
+
         async function loadUpdates() {
             try {
                 const response = await fetch('announcements.json');
-                const data = await response.json();
-
-                if (data.length === 0) {
-                    document.getElementById('latest-update').innerHTML = "<p>No updates yet.</p>";
-                    return;
-                }
-
-                // 1. Handle the Latest Update (First item in JSON)
-                const latest = data[0];
-                document.getElementById('latest-update').innerHTML = `
-                    <div class="latest-card">
-                        <span class="badge">Latest Update</span>
-                        <h2>${latest.title}</h2>
-                        <p class="item-date">${latest.date}</p>
-                        <p class="item-content">${latest.content}</p>
-                    </div>
-                `;
-
-                // 2. Handle the History (All items)
-                const historyList = document.getElementById('history-list');
-                historyList.innerHTML = data.map(item => `
-                    <div class="history-item">
-                        <span class="item-date">${item.date}</span>
-                        <span class="item-title">${item.title}</span>
-                        <div class="item-content">${item.content}</div>
-                    </div>
-                `).join('');
-
-            } catch (error) {
-                console.error("Error loading JSON:", error);
-                document.getElementById('latest-update').innerHTML = "<p>Error loading updates. Please try again later.</p>";
+                allUpdates = await response.json();
+                renderUpdates();
+            } catch (e) {
+                document.getElementById('updateList').innerHTML = `<p>Failed to load updates.</p>`;
             }
+        }
+
+        function renderUpdates() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const list = document.getElementById('updateList');
+            
+            const filtered = allUpdates.filter(item => {
+                const matchesFilter = currentFilter === 'All' || item.category === currentFilter;
+                const matchesSearch = item.title.toLowerCase().includes(searchTerm) || item.content.toLowerCase().includes(searchTerm);
+                return matchesFilter && matchesSearch;
+            });
+
+            list.innerHTML = filtered.map(item => `
+                <div class="update-card">
+                    <div class="card-meta">
+                        <span class="category-tag cat-${item.category.toLowerCase()}">${item.category}</span>
+                        <span class="update-date">${item.date}</span>
+                    </div>
+                    <h2>${item.title}</h2>
+                    <div class="update-content">${item.content}</div>
+                    <a href="${item.link}" class="btn-link" target="_blank">
+                        View Details 
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        function setFilter(cat, btn) {
+            currentFilter = cat;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderUpdates();
+        }
+
+        function filterUpdates() {
+            renderUpdates();
+        }
+
+        function toggleSettings() {
+            document.getElementById('settingsPanel').classList.toggle('open');
+        }
+
+        function toggleTheme() {
+            const isDark = document.getElementById('themeToggle').checked;
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
         }
 
         loadUpdates();

@@ -2,16 +2,29 @@
   {
     "date": "2026-11-08",
     "title": "Community Guidelines Update",
-    "content": "We have officially released the new Community Rules for Uploading a Book to ensure higher quality contributions."
+    "category": "Policy",
+    "content": "We have officially released the new Community Rules for Uploading a Book to ensure higher quality contributions.",
+    "link": "https://github.com/cloudberrypitech/kwiddle/blob/main/CONTRIBUTING.md"
   },
   {
     "date": "2026-10-15",
     "title": "Version 2.0 Launch",
-    "content": "Kwiddle 2.0 is now live with improved PNG rendering for title pages and faster load times."
+    "category": "Feature",
+    "content": "Kwiddle 2.0 is now live with improved PNG rendering for title pages and faster load times.",
+    "link": "https://github.com/cloudberrypitech/kwiddle/releases"
+  },
+  {
+    "date": "2026-09-20",
+    "title": "Security Patch v2.0.1",
+    "category": "Fix",
+    "content": "Resolved a critical issue regarding image upload validation and sanitized input fields.",
+    "link": "#"
   },
   {
     "date": "2026-09-01",
     "title": "New Support Form",
-    "content": "You can now request custom title pages directly through our new streamlined support form."
+    "category": "Announcement",
+    "content": "You can now request custom title pages directly through our new streamlined support form.",
+    "link": "https://github.com/cloudberrypitech"
   }
 ]
