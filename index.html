@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" data-accent="#3b82f6">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kwiddle | Project Updates</title>
+    <title>Kwiddle | Project Hub</title>
     <style>
         :root {
             --bg: #f8fafc;
             --surface: #ffffff;
             --text-main: #1e293b;
             --text-muted: #64748b;
-            --primary: #3b82f6;
+            --primary: var(--accent-color, #3b82f6);
             --primary-hover: #2563eb;
             --border: #e2e8f0;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --radius: 12px;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius: 16px;
         }
 
         [data-theme="dark"] {
@@ -22,14 +22,12 @@
             --surface: #1e293b;
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
-            --primary: #60a5fa;
-            --primary-hover: #93c5fd;
             --border: #334155;
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            --shadow: 0 10px 20px rgba(0,0,0,0.4);
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background-color: var(--bg);
             color: var(--text-main);
             margin: 0;
@@ -37,65 +35,74 @@
             line-height: 1.6;
         }
 
-        /* Layout */
         .app-container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 60px 20px;
         }
 
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 50px;
         }
 
         .brand h1 {
-            font-size: 1.8rem;
+            font-size: 2.2rem;
             font-weight: 800;
             margin: 0;
-            letter-spacing: -0.025em;
+            background: linear-gradient(45deg, var(--text-main), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .brand p {
             color: var(--text-muted);
             margin: 5px 0 0 0;
+            font-size: 1.1rem;
         }
 
-        /* Controls Section */
-        .controls {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
+        .toolbar {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 20px;
             align-items: center;
-        }
-
-        .search-box {
-            flex-grow: 1;
-            position: relative;
         }
 
         .search-box input {
             width: 100%;
-            padding: 12px 15px;
-            border-radius: var(--radius);
+            padding: 12px 20px;
+            border-radius: 12px;
             border: 1px solid var(--border);
-            background: var(--surface);
+            background: var(--bg);
             color: var(--text-main);
-            font-size: 0.95rem;
+            font-size: 1rem;
             box-sizing: border-box;
+            outline: none;
+        }
+
+        .search-box input:focus { border-color: var(--primary); }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
         }
 
         .filter-btn {
-            padding: 10px 16px;
-            border-radius: var(--radius);
+            padding: 10px 18px;
+            border-radius: 10px;
             border: 1px solid var(--border);
             background: var(--surface);
             color: var(--text-main);
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
             transition: all 0.2s;
         }
 
@@ -105,128 +112,146 @@
             border-color: var(--primary);
         }
 
-        /* Settings Panel */
-        .settings-trigger {
-            background: none;
-            border: 1px solid var(--border);
-            color: var(--text-main);
+        .sort-select {
             padding: 10px;
-            border-radius: 50%;
-            cursor: pointer;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .settings-panel {
-            position: fixed;
-            right: -300px;
-            top: 0;
-            width: 280px;
-            height: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--border);
             background: var(--surface);
-            border-left: 1px solid var(--border);
-            box-shadow: var(--shadow);
-            transition: right 0.3s ease;
-            z-index: 1000;
-            padding: 30px 20px;
-            box-sizing: border-box;
+            color: var(--text-main);
+            cursor: pointer;
         }
 
-        .settings-panel.open { right: 0; }
-
-        .settings-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .setting-item {
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* Update Cards */
-        .update-list {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+        .update-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
         }
 
         .update-card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 24px;
+            padding: 25px;
             box-shadow: var(--shadow);
-            transition: transform 0.2s ease;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
             position: relative;
-            overflow: hidden;
         }
 
         .update-card:hover {
-            transform: translateY(-4px);
+            transform: translateY(-8px);
+            border-color: var(--primary);
+        }
+
+        .update-card.importance-high {
+            border: 2px solid var(--primary);
         }
 
         .card-meta {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
 
         .category-tag {
             font-size: 0.7rem;
             text-transform: uppercase;
-            font-weight: 700;
-            padding: 4px 8px;
-            border-radius: 4px;
-            background: var(--border);
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: var(--bg);
             color: var(--text-muted);
         }
 
-        .cat-feature { background: #dcfce7; color: #166534; }
-        .cat-fix { background: #fee2e2; color: #991b1b; }
-        .cat-policy { background: #fef9c3; color: #854d0e; }
-        .cat-announcement { background: #dbeafe; color: #1e40af; }
-
         .update-date {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
+            font-weight: 500;
         }
 
         .update-card h2 {
-            margin: 0 0 10px 0;
-            font-size: 1.3rem;
+            margin: 0 0 12px 0;
+            font-size: 1.4rem;
         }
 
         .update-content {
             color: var(--text-muted);
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            flex-grow: 1;
+        }
+
+        .highlight {
+            background: #fef08a;
+            color: #854d0e;
+            border-radius: 2px;
         }
 
         .btn-link {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             text-decoration: none;
-            color: var(--primary);
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
             font-weight: 600;
-            font-size: 0.9rem;
-            transition: color 0.2s;
+            transition: opacity 0.2s;
         }
 
-        .btn-link:hover {
-            color: var(--primary-hover);
+        .settings-trigger {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
         }
 
-        /* Icons */
-        .icon { width: 18px; height: 18px; vertical-align: middle; }
+        .settings-panel {
+            position: fixed;
+            right: -350px;
+            top: 0;
+            width: 320px;
+            height: 100%;
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: right 0.4s ease;
+            z-index: 1000;
+            padding: 40px 25px;
+            box-sizing: border-box;
+        }
+
+        .settings-panel.open { right: 0; }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .color-picker {
+            width: 40px;
+            height: 40px;
+            border: none;
+            cursor: pointer;
+            background: none;
+        }
+
+        .icon { width: 20px; height: 20px; }
     </style>
 </head>
 <body>
@@ -234,96 +259,122 @@
     <div class="app-container">
         <header>
             <div class="brand">
-                <h1>Kwiddle Updates</h1>
-                <p>Official project changelog and community announcements</p>
+                <h1>Kwiddle Hub</h1>
+                <p>Project Evolution & Community Announcements</p>
             </div>
             <button class="settings-trigger" onclick="toggleSettings()">
                 <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
             </button>
         </header>
 
-        <div class="controls">
+        <div class="toolbar">
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Search updates..." oninput="filterUpdates()">
+                <input type="text" id="searchInput" placeholder="Search keywords..." oninput="updateState({ search: this.value })">
             </div>
-            <button class="filter-btn active" onclick="setFilter('All', this)">All</button>
-            <button class="filter-btn" onclick="setFilter('Feature', this)">Features</button>
-            <button class="filter-btn" onclick="setFilter('Fix', this)">Fixes</button>
-            <button class="filter-btn" onclick="setFilter('Policy', this)">Policy</button>
+            <div class="filter-group">
+                <button class="filter-btn active" onclick="updateState({ filter: 'All' }, this)">All</button>
+                <button class="filter-btn" onclick="updateState({ filter: 'Feature' }, this)">Features</button>
+                <button class="filter-btn" onclick="updateState({ filter: 'Fix' }, this)">Fixes</button>
+            </div>
+            <select class="sort-select" onchange="updateState({ sort: this.value })">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+            </select>
         </div>
 
-        <div id="updateList" class="update-list">
-            <!-- Content injected via JS -->
-        </div>
+        <div id="updateGrid" class="update-grid"></div>
     </div>
 
-    <!-- Settings Panel -->
     <div id="settingsPanel" class="settings-panel">
-        <div class="settings-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
             <h2>Settings</h2>
-            <button class="settings-trigger" onclick="toggleSettings()">✕</button>
+            <button onclick="toggleSettings()" style="background:none; border:none; cursor:pointer; color:var(--text-main); font-size: 1.5rem;">✕</button>
         </div>
-        <div class="setting-item">
+        <div class="setting-row">
             <span>Dark Mode</span>
             <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
         </div>
-        <div class="setting-item">
-            <span>Auto-Refresh</span>
-            <input type="checkbox" checked disabled>
+        <div class="setting-row">
+            <span>Accent Color</span>
+            <input type="color" id="accentPicker" class="color-picker" oninput="changeAccent(this.value)">
         </div>
     </div>
 
-    <script>
-        let allUpdates = [];
-        let currentFilter = 'All';
+        <script>
+        // App State
+        let state = {
+            allUpdates: [],
+            filter: 'All',
+            search: '',
+            sort: 'newest'
+        };
 
         async function loadUpdates() {
             try {
                 const response = await fetch('announcements.json');
-                allUpdates = await response.json();
-                renderUpdates();
+                state.allUpdates = await response.json();
+                render();
             } catch (e) {
-                document.getElementById('updateList').innerHTML = `<p>Failed to load updates.</p>`;
+                document.getElementById('updateGrid').innerHTML = `<p>Failed to load updates. Please ensure announcements.json exists in the same folder.</p>`;
             }
         }
 
-        function renderUpdates() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const list = document.getElementById('updateList');
-            
-            const filtered = allUpdates.filter(item => {
-                const matchesFilter = currentFilter === 'All' || item.category === currentFilter;
-                const matchesSearch = item.title.toLowerCase().includes(searchTerm) || item.content.toLowerCase().includes(searchTerm);
+        function updateState(newState, btn = null) {
+            state = { ...state, ...newState };
+            if (btn) {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+            render();
+        }
+
+        function highlightText(text, query) {
+            if (!query) return text;
+            const re = new RegExp(`(${query})`, 'gi');
+            return text.replace(re, '<span class="highlight">$1</span>');
+        }
+
+        function render() {
+            const grid = document.getElementById('updateGrid');
+            let filtered = state.allUpdates.filter(item => {
+                const matchesFilter = state.filter === 'All' || item.category === state.filter;
+                const matchesSearch = item.title.toLowerCase().includes(state.search.toLowerCase()) || 
+                                    item.content.toLowerCase().includes(state.search.toLowerCase());
                 return matchesFilter && matchesSearch;
             });
 
-            list.innerHTML = filtered.map(item => `
-                <div class="update-card">
+            filtered.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return state.sort === 'newest' ? dateB - dateA : dateA - dateB;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No updates found matching your criteria.</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(item => `
+                <div class="update-card ${item.importance === 'high' ? 'importance-high' : ''}">
                     <div class="card-meta">
-                        <span class="category-tag cat-${item.category.toLowerCase()}">${item.category}</span>
+                        <span class="category-tag">${item.category}</span>
                         <span class="update-date">${item.date}</span>
                     </div>
-                    <h2>${item.title}</h2>
-                    <div class="update-content">${item.content}</div>
-                    <a href="${item.link}" class="btn-link" target="_blank">
-                        View Details 
-                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                    </a>
+                    <h2>${highlightText(item.title, state.search)}</h2>
+                    <div class="update-content">${highlightText(item.content, state.search)}</div>
+                    ${item.link !== "#" ? `
+                        <a href="${item.link}" class="btn-link" target="_blank">
+                            View Details 
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </a>
+                    ` : `
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No external link available</span>
+                    `}
                 </div>
             `).join('');
         }
 
-        function setFilter(cat, btn) {
-            currentFilter = cat;
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderUpdates();
-        }
-
-        function filterUpdates() {
-            renderUpdates();
-        }
-
+        // Settings Functions
         function toggleSettings() {
             document.getElementById('settingsPanel').classList.toggle('open');
         }
@@ -333,6 +384,12 @@
             document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
         }
 
+        function changeAccent(color) {
+            document.documentElement.setAttribute('data-accent', color);
+            document.documentElement.style.setProperty('--primary', color);
+        }
+
+        // Initialize
         loadUpdates();
     </script>
 </body>
