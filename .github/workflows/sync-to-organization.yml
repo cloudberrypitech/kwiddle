@@ -1,0 +1,42 @@
+
+name: Sync Personal Repository to Organization
+
+on:
+  push:
+    branches:
+      - main
+
+  # Allows manual synchronization too
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-main-to-organization
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Synchronize Main Branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Personal Repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Push to Organization Repository
+        env:
+          ORG_SYNC_TOKEN: ${{ secrets.ORG_SYNC_PAT }}
+          ORG_REPOSITORY: cloudberrypi-technologies/kwiddle
+        run: |
+          set -euo pipefail
+
+          git remote add organization \
+            "https://x-access-token:${ORG_SYNC_TOKEN}@github.com/${ORG_REPOSITORY}.git"
+
+          git push organization HEAD:refs/heads/main
