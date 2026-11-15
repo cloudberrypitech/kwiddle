@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-accent="#3b82f6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kwiddle | Project Hub</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --primary: var(--accent-color, #3b82f6);
+            --primary-hover: #2563eb;
+            --border: #e2e8f0;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius: 16px;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            transition: background 0.3s ease;
+            line-height: 1.6;
+        }
+
+        .app-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 50px;
+        }
+
+        .brand h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(45deg, var(--text-main), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand p {
+            color: var(--text-muted);
+            margin: 5px 0 0 0;
+            font-size: 1.1rem;
+        }
+
+        .toolbar {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text-main);
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .search-box input:focus { border-color: var(--primary); }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-main);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .sort-select {
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        .update-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .update-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .update-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+        }
+
+        .update-card.importance-high {
+            border: 2px solid var(--primary);
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .category-tag {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text-muted);
+        }
+
+        .update-date {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .update-card h2 {
+            margin: 0 0 12px 0;
+            font-size: 1.4rem;
+        }
+
+        .update-content {
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            flex-grow: 1;
+        }
+
+        .highlight {
+            background: #fef08a;
+            color: #854d0e;
+            border-radius: 2px;
+        }
+
+        .btn-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .settings-trigger {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+        }
+
+        .settings-panel {
+            position: fixed;
+            right: -350px;
+            top: 0;
+            width: 320px;
+            height: 100%;
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: right 0.4s ease;
+            z-index: 1000;
+            padding: 40px 25px;
+            box-sizing: border-box;
+        }
+
+        .settings-panel.open { right: 0; }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .color-picker {
+            width: 40px;
+            height: 40px;
+            border: none;
+            cursor: pointer;
+            background: none;
+        }
+
+        .icon { width: 20px; height: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <div class="brand">
+                <h1>Kwiddle Hub</h1>
+                <p>Project Evolution & Community Announcements</p>
+            </div>
+            <button class="settings-trigger" onclick="toggleSettings()">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </button>
+        </header>
+
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search keywords..." oninput="updateState({ search: this.value })">
+            </div>
+            <div class="filter-group">
+                <button class="filter-btn active" onclick="updateState({ filter: 'All' }, this)">All</button>
+                <button class="filter-btn" onclick="updateState({ filter: 'Feature' }, this)">Features</button>
+                <button class="filter-btn" onclick="updateState({ filter: 'Fix' }, this)">Fixes</button>
+            </div>
+            <select class="sort-select" onchange="updateState({ sort: this.value })">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+            </select>
+        </div>
+
+        <div id="updateGrid" class="update-grid"></div>
+    </div>
+
+    <div id="settingsPanel" class="settings-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h2>Settings</h2>
+            <button onclick="toggleSettings()" style="background:none; border:none; cursor:pointer; color:var(--text-main); font-size: 1.5rem;">✕</button>
+        </div>
+        <div class="setting-row">
+            <span>Dark Mode</span>
+            <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+        </div>
+        <div class="setting-row">
+            <span>Accent Color</span>
+            <input type="color" id="accentPicker" class="color-picker" oninput="changeAccent(this.value)">
+        </div>
+    </div>
+
+        <script>
+        // App State
+        let state = {
+            allUpdates: [],
+            filter: 'All',
+            search: '',
+            sort: 'newest'
+        };
+
+        async function loadUpdates() {
+            try {
+                const response = await fetch('announcements.json');
+                state.allUpdates = await response.json();
+                render();
+            } catch (e) {
+                document.getElementById('updateGrid').innerHTML = `<p>Failed to load updates. Please ensure announcements.json exists in the same folder.</p>`;
+            }
+        }
+
+        function updateState(newState, btn = null) {
+            state = { ...state, ...newState };
+            if (btn) {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+            render();
+        }
+
+        function highlightText(text, query) {
+            if (!query) return text;
+            const re = new RegExp(`(${query})`, 'gi');
+            return text.replace(re, '<span class="highlight">$1</span>');
+        }
+
+        function render() {
+            const grid = document.getElementById('updateGrid');
+            let filtered = state.allUpdates.filter(item => {
+                const matchesFilter = state.filter === 'All' || item.category === state.filter;
+                const matchesSearch = item.title.toLowerCase().includes(state.search.toLowerCase()) || 
+                                    item.content.toLowerCase().includes(state.search.toLowerCase());
+                return matchesFilter && matchesSearch;
+            });
+
+            filtered.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return state.sort === 'newest' ? dateB - dateA : dateA - dateB;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No updates found matching your criteria.</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(item => `
+                <div class="update-card ${item.importance === 'high' ? 'importance-high' : ''}">
+                    <div class="card-meta">
+                        <span class="category-tag">${item.category}</span>
+                        <span class="update-date">${item.date}</span>
+                    </div>
+                    <h2>${highlightText(item.title, state.search)}</h2>
+                    <div class="update-content">${highlightText(item.content, state.search)}</div>
+                    ${item.link !== "#" ? `
+                        <a href="${item.link}" class="btn-link" target="_blank">
+                            View Details 
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </a>
+                    ` : `
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No external link available</span>
+                    `}
+                </div>
+            `).join('');
+        }
+
+        // Settings Functions
+        function toggleSettings() {
+            document.getElementById('settingsPanel').classList.toggle('open');
+        }
+
+        function toggleTheme() {
+            const isDark = document.getElementById('themeToggle').checked;
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        }
+
+        function changeAccent(color) {
+            document.documentElement.setAttribute('data-accent', color);
+            document.documentElement.style.setProperty('--primary', color);
+        }
+
+        // Initialize
+        loadUpdates();
+    </script>
+</body>
+</html>

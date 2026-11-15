@@ -1,5 +1,8 @@
 import webbrowser
+from io import BytesIO
 from pathlib import Path
+
+from PIL import Image, ImageTk
 from tkinter import (
     Tk,
     Toplevel,
@@ -26,6 +29,7 @@ from kwloader import (
     BookDocument,
     TextBlock,
     TextStyle,
+    ImageAsset,
     load_book,
 )
 
@@ -102,72 +106,163 @@ def run():
 
         return (font_name, size, "normal", "roman")
 
-    def configure_text_tag(text_widget, tag_name, style, align=None):
-        options = {
-            "font": make_font(style),
-        }
-
+    def configure_text_tag(text_widget, tag_name, style, align=None, attributes=None):
+        options = {"font": make_font(style)}
         if style.underline:
             options["underline"] = True
-
+        if getattr(style, "strike", False):
+            options["overstrike"] = True
+        if getattr(style, "color", None):
+            options["foreground"] = style.color
+        if getattr(style, "background_color", None) and style.background_color != "transparent":
+            options["background"] = style.background_color
+        if getattr(style, "overline", False):
+            options["overstrike"] = True
         if align == "center":
             options["justify"] = "center"
         elif align == "right":
             options["justify"] = "right"
-        elif align == "left":
+        else:
             options["justify"] = "left"
-        elif align == "justify":
-            options["justify"] = "left"
-
+        attributes = attributes or {}
+        for source, target in (("margin_left", "lmargin1"),
+                               ("margin_right", "rmargin"),
+                               ("text_indent", "lmargin2"),
+                               ("margin_top", "spacing1"),
+                               ("margin_bottom", "spacing3")):
+            value = attributes.get(source)
+            if value:
+                try:
+                    # kwloader stores original ODF length strings.
+                    import re
+                    match = re.match(r"\s*(-?\d+(?:\.\d+)?)\s*(pt|px|cm|mm|in)?", str(value))
+                    if match:
+                        number = float(match.group(1))
+                        unit = match.group(2) or "pt"
+                        points = number * {"pt": 1, "px": .75, "cm": 28.346, "mm": 2.835, "in": 72}[unit]
+                        options[target] = max(0, int(points * 1.33))
+                except Exception:
+                    pass
         text_widget.tag_configure(tag_name, **options)
 
-    def insert_block(text_widget, block: TextBlock):
-        """
-        Render one kwloader TextBlock into a Tkinter Text widget.
+    def _insert_image(text_widget, asset):
+        if asset is None or not asset.data:
+            text_widget.insert(END, "[Image unavailable]")
+            return
+        try:
+            image_bytes = asset.data
+            if asset.mime_type == "image/svg+xml" or asset.name.lower().endswith(".svg"):
+                import cairosvg
+                image_bytes = cairosvg.svg2png(bytestring=image_bytes)
+            image = Image.open(BytesIO(image_bytes)).convert("RGBA")
+            # Honour ODF frame dimensions where present, but keep images within
+            # the reader viewport so unusually large page graphics remain usable.
+            import re
+            def dimension_px(value):
+                if not value:
+                    return None
+                match = re.match(r"\s*(\d+(?:\.\d+)?)\s*(pt|px|cm|mm|in)?", str(value).lower())
+                if not match:
+                    return None
+                number = float(match.group(1)); unit = match.group(2) or "px"
+                return int(number * {"pt": 96 / 72, "px": 1, "cm": 96 / 2.54,
+                                     "mm": 96 / 25.4, "in": 96}[unit])
+            requested_w = dimension_px(getattr(asset, "width", None))
+            requested_h = dimension_px(getattr(asset, "height", None))
+            if requested_w or requested_h:
+                ratio = image.width / max(1, image.height)
+                target_w = requested_w or int(requested_h * ratio)
+                target_h = requested_h or int(target_w / ratio)
+                scale = min(1.0, 680 / max(1, target_w), 520 / max(1, target_h))
+                image = image.resize((max(1, int(target_w * scale)),
+                                      max(1, int(target_h * scale))), Image.Resampling.LANCZOS)
+            else:
+                image.thumbnail((680, 520), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(image)
+            if not hasattr(text_widget, "_kwiddle_image_refs"):
+                text_widget._kwiddle_image_refs = []
+            text_widget._kwiddle_image_refs.append(photo)
+            text_widget.image_create(END, image=photo, align="baseline")
+            if asset.alt_text or asset.title:
+                text_widget.insert(END, "\n" + (asset.alt_text or asset.title) + "\n")
+        except Exception as error:
+            text_widget.insert(END, f"[Could not display image: {error}]")
 
-        All document-format-specific parsing has already happened in kwloader.
-        """
+    def insert_block(text_widget, block: TextBlock, depth=0):
+        """Render the format-neutral kwloader model, including embedded images."""
+        if block.kind == "page_break":
+            text_widget.insert(END, "\n\n" + "─" * 32 + "\n\n")
+            return
+        if block.attributes.get("break_before") in {"page", "column"}:
+            text_widget.insert(END, "\n\n" + "─" * 32 + "\n\n")
+        if block.kind in {"list", "section", "toc", "index", "list_item", "list_header"}:
+            for index, child in enumerate(block.children):
+                if block.kind == "list_item":
+                    marker = "• "
+                    text_widget.insert(END, "    " * depth + marker)
+                elif block.kind == "list_header":
+                    text_widget.insert(END, "    " * depth)
+                insert_block(text_widget, child, depth + (1 if block.kind in {"list", "list_item"} else 0))
+            return
+        if block.kind == "table":
+            for row in block.children:
+                for index, cell in enumerate(row.children):
+                    if index:
+                        text_widget.insert(END, "    │    ")
+                    for paragraph in cell.children:
+                        insert_block(text_widget, paragraph, depth)
+                        if paragraph is not cell.children[-1]:
+                            text_widget.insert(END, " ")
+                text_widget.insert(END, "\n" + "─" * 55 + "\n")
+            text_widget.insert(END, "\n")
+            return
+        if block.kind == "image":
+            _insert_image(text_widget, block.image)
+            text_widget.insert(END, "\n\n")
+            return
+
         if block.kind == "heading":
-            default_style = TextStyle(
-                bold=True,
-                size=18,
-            )
+            try:
+                level = int(block.attributes.get("outline_level") or 1)
+            except Exception:
+                level = 1
+            default_style = TextStyle(bold=True, size=max(14, 22 - (level - 1) * 2))
         else:
-            default_style = TextStyle(
-                size=14,
-            )
+            default_style = TextStyle(size=14)
 
-        block_style = TextStyle(
-            bold=default_style.bold,
-            italic=default_style.italic,
-            underline=default_style.underline,
-            size=default_style.size,
-            font=default_style.font,
-        )
-
+        block_style = getattr(block, "style", TextStyle())
         for index, run in enumerate(block.runs):
+            if run.image is not None:
+                _insert_image(text_widget, run.image)
+                continue
             style = run.style
-
+            effective_size = style.size if style.size is not None else (block_style.size if block_style.size is not None else default_style.size)
+            if getattr(style, "superscript", False) or getattr(style, "subscript", False):
+                effective_size = max(6, int((effective_size or 14) * 0.7))
             effective = TextStyle(
-                bold=style.bold or block_style.bold,
-                italic=style.italic or block_style.italic,
-                underline=style.underline or block_style.underline,
-                size=style.size if style.size is not None else block_style.size,
-                font=style.font or block_style.font,
+                bold=style.bold or block_style.bold or default_style.bold,
+                italic=style.italic or block_style.italic or default_style.italic,
+                underline=style.underline or block_style.underline or default_style.underline,
+                size=effective_size,
+                font=style.font or block_style.font or default_style.font,
+                color=style.color or block_style.color,
+                background_color=style.background_color or block_style.background_color,
+                strike=getattr(style, "strike", False) or getattr(block_style, "strike", False),
+                overline=getattr(style, "overline", False) or getattr(block_style, "overline", False),
+                superscript=getattr(style, "superscript", False) or getattr(block_style, "superscript", False),
+                subscript=getattr(style, "subscript", False) or getattr(block_style, "subscript", False),
             )
-
             tag_name = f"kwloader_{id(block)}_{index}"
-
-            configure_text_tag(
-                text_widget,
-                tag_name,
-                effective,
-                block.align,
-            )
-
+            configure_text_tag(text_widget, tag_name, effective, block.align, block.attributes)
+            if run.link:
+                text_widget.tag_configure(tag_name, foreground="#1769aa", underline=True)
+                text_widget.tag_bind(tag_name, "<Button-1>",
+                                     lambda event, url=run.link: webbrowser.open(url))
             text_widget.insert(END, run.text, tag_name)
 
         text_widget.insert(END, "\n\n")
+        if block.attributes.get("break_after") in {"page", "column"}:
+            text_widget.insert(END, "\n\n" + "─" * 32 + "\n\n")
 
     def build_document_pages(document: BookDocument):
         """
@@ -177,9 +272,9 @@ def run():
             return [[]]
 
         blocks = [
-            block
-            for block in document.blocks
-            if block.text.strip()
+            block for block in document.blocks
+            if block.text.strip() or block.kind in {"image", "table", "list", "page_break"}
+            or any(run.image is not None for run in block.runs)
         ]
 
         if not blocks:

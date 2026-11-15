@@ -4,18 +4,28 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kwiddle"
-version = "0.1.0"
+version = "0.2.0"
 description = "Desktop book reader powered by kwloader"
 readme = "README.md"
-requires-python = ">=3.13, <3.16"
+requires-python = ">=3.10"
 dependencies = [
-    "kwloader @ git+https://github.com/cloudberrypitech/kwloader",
-    "auto-py-to-exe (>=2.50.1,<3.0.0)",
-    "pyfiglet (>=1.0.4,<2.0.0)"
+    "kwloader @ git+https://github.com/cloudberrypitech/kwloader@main",
+    "Pillow>=10.0.0,<13.0.0",
+    "CairoSVG>=2.7.1,<3.0.0",
+    "pyfiglet>=1.0.4,<2.0.0",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+kwiddle = "kwiddle.maincode:run"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+kwiddle = ["books/*", "*.png"]

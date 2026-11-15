@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "date": "2026-11-08",
+    "title": "Community Guidelines Update",
+    "category": "Policy",
+    "importance": "high",
+    "content": "We have officially released the new Community Rules for Uploading a Book to ensure higher quality contributions and a better reading experience.",
+    "link": "https://github.com/cloudberrypitech/kwiddle/blob/main/CONTRIBUTING.md"
+  },
+  {
+    "id": 2,
+    "date": "2026-10-15",
+    "title": "Kwiddle becomes 'News-Compatible`",
+    "category": "Announcement",
+    "importance": "low",
+    "content": "Kwiddle is going to start coming with fortnightly news updates with shortened keypoints after every 'e-newspaper'. The feature is planned to begin on 16 November 2026.",
+    "link": "https://github.com/cloudberrypitech/kwiddle/releases"
+  }
+]
