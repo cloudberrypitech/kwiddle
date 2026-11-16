@@ -519,6 +519,49 @@ def run():
 
         return tuple(sorted(signature))
 
+    def _odf_property(properties, local_name):
+        for key, value in (properties or {}).items():
+            if str(key).rsplit("}", 1)[-1] == local_name:
+                return value
+        return None
+
+    def _odf_length_pixels(value):
+        if not value:
+            return None
+        try:
+            import re
+            match = re.fullmatch(r"\s*(-?\d+(?:\.\d+)?)\s*(pt|px|cm|mm|in|pc)?\s*", str(value).lower())
+            if not match:
+                return None
+            number = float(match.group(1))
+            unit = match.group(2) or "pt"
+            return max(0, int(number * {
+                "pt": 96 / 72, "px": 1, "cm": 96 / 2.54,
+                "mm": 96 / 25.4, "in": 96, "pc": 16,
+            }[unit]))
+        except (TypeError, ValueError):
+            return None
+
+    def _document_master(document):
+        masters = getattr(document, "page_layout", {}).get("master_pages", [])
+        return masters[0] if masters else {}
+
+    def _document_page_layout(document):
+        page_layout = getattr(document, "page_layout", {}) or {}
+        layouts = page_layout.get("layouts", {})
+        master = _document_master(document)
+        name = master.get("page_layout_name")
+        return layouts.get(name) or layouts.get("default") or {}
+
+    def _document_window_size(document):
+        properties = _document_page_layout(document)
+        width = _odf_length_pixels(_odf_property(properties, "page-width"))
+        height = _odf_length_pixels(_odf_property(properties, "page-height"))
+        if not width or not height:
+            return 900, 700
+        scale = min(1.0, 1100 / width, 1000 / height)
+        return max(620, int(width * scale)), max(520, int(height * scale))
+
     def open_book(title):
         document = books.get(title)
 
@@ -544,7 +587,8 @@ def run():
 
         book_window = Toplevel(window)
         book_window.title(f"Kwiddle - {title}")
-        book_window.geometry("900x700")
+        page_width, page_height = _document_window_size(document)
+        book_window.geometry(f"{page_width}x{page_height}")
         book_window.minsize(500, 400)
 
         reader_pane = PanedWindow(
@@ -715,6 +759,19 @@ def run():
             bg, fg = palette.get(reader_theme, palette["Light"])
             text.configure(background=bg, foreground=fg, insertbackground=fg)
             fit_horizontal_margins(text)
+            properties = _document_page_layout(document)
+            left_margin = _odf_length_pixels(_odf_property(properties, "margin-left"))
+            right_margin = _odf_length_pixels(_odf_property(properties, "margin-right"))
+            if left_margin or right_margin:
+                text.configure(padx=max(18, min(180, max(left_margin or 0, right_margin or 0))))
+
+            master = _document_master(document)
+            header_text = master.get("header") or master.get("header-left")
+            footer_text = master.get("footer") or master.get("footer-left")
+            text.tag_configure("kwiddle_page_header", font=("Arial", 9), foreground="#64748b", justify="center")
+            text.tag_configure("kwiddle_page_footer", font=("Arial", 9), foreground="#64748b", justify="center")
+            if header_text:
+                text.insert(END, header_text + "\n\n", "kwiddle_page_header")
 
             try:
                 page_blocks = pages[current_page]
@@ -727,6 +784,8 @@ def run():
                 else:
                     for block in page_blocks:
                         insert_block(text, block)
+                    if footer_text:
+                        text.insert(END, "\n\n" + footer_text + "\n", "kwiddle_page_footer")
 
             except Exception as error:
                 text.insert(
