@@ -152,8 +152,11 @@ def run():
             return
         try:
             image_bytes = asset.data
-            if asset.mime_type == "image/svg+xml" or asset.name.lower().endswith(".svg"):
+            if asset.mime_type == "image/svg+xml" or asset.name.lower().endswith((".svg", ".svgz")):
                 import cairosvg
+                if asset.name.lower().endswith(".svgz"):
+                    import gzip
+                    image_bytes = gzip.decompress(image_bytes)
                 image_bytes = cairosvg.svg2png(bytestring=image_bytes)
             image = Image.open(BytesIO(image_bytes)).convert("RGBA")
             # Honour ODF frame dimensions where present, but keep images within
@@ -189,31 +192,98 @@ def run():
         except Exception as error:
             text_widget.insert(END, f"[Could not display image: {error}]")
 
-    def insert_block(text_widget, block: TextBlock, depth=0):
-        """Render the format-neutral kwloader model, including embedded images."""
+    def _list_marker(index, list_style):
+        levels = (list_style or {}).get("levels", [])
+        level = levels[0] if levels else {}
+        kind = level.get("kind", "")
+        if kind == "list-level-style-number":
+            fmt = level.get("num_format") or "1"
+            start = int(level.get("start_value") or 1) if str(level.get("start_value") or "1").isdigit() else 1
+            value = start + index
+            if fmt in {"a", "A"}:
+                number = value
+                label = ""
+                while number > 0:
+                    number, rem = divmod(number - 1, 26)
+                    label = chr((97 if fmt == "a" else 65) + rem) + label
+            elif fmt in {"i", "I"}:
+                number = value
+                pairs = ((1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"))
+                label = ""
+                for amount, symbol in pairs:
+                    while number >= amount:
+                        label += symbol
+                        number -= amount
+                if fmt == "i":
+                    label = label.lower()
+            else:
+                label = str(value)
+            return f"{level.get('num_prefix', '')}{label}{level.get('num_suffix', '.')} "
+        return (level.get("bullet_char") or "•") + " "
+
+    def insert_block(text_widget, block: TextBlock, depth=0, list_marker=None):
+        """Render the shared document model, including embedded media and styled tables."""
         if block.kind == "page_break":
             text_widget.insert(END, "\n\n" + "─" * 32 + "\n\n")
             return
         if block.attributes.get("break_before") in {"page", "column"}:
             text_widget.insert(END, "\n\n" + "─" * 32 + "\n\n")
-        if block.kind in {"list", "section", "toc", "index", "list_item", "list_header"}:
+        if block.kind == "list":
+            list_style = block.attributes.get("list_style", {})
             for index, child in enumerate(block.children):
-                if block.kind == "list_item":
-                    marker = "• "
-                    text_widget.insert(END, "    " * depth + marker)
-                elif block.kind == "list_header":
-                    text_widget.insert(END, "    " * depth)
-                insert_block(text_widget, child, depth + (1 if block.kind in {"list", "list_item"} else 0))
+                marker = _list_marker(index, list_style)
+                insert_block(text_widget, child, depth, marker if child.kind == "list_item" else None)
+            return
+        if block.kind in {"section", "toc", "index", "list_item", "list_header"}:
+            if block.kind == "list_item" and list_marker:
+                text_widget.insert(END, "    " * depth + list_marker)
+            elif block.kind == "list_header":
+                text_widget.insert(END, "    " * depth)
+            for child in block.children:
+                insert_block(text_widget, child, depth + (1 if block.kind in {"list_item", "list"} else 0))
             return
         if block.kind == "table":
-            for row in block.children:
+            table_tag = f"kwiddle_table_{id(block)}"
+            text_widget.tag_configure(table_tag, lmargin1=8, rmargin=8)
+            text_widget.insert(END, "\n")
+            for row_index, row in enumerate(block.children):
+                row_start = text_widget.index(END)
                 for index, cell in enumerate(row.children):
+                    if cell.attributes.get("covered"):
+                        continue
                     if index:
                         text_widget.insert(END, "    │    ")
+                    cell_start = text_widget.index(END)
                     for paragraph in cell.children:
                         insert_block(text_widget, paragraph, depth)
-                        if paragraph is not cell.children[-1]:
-                            text_widget.insert(END, " ")
+                    cell_end = text_widget.index(END)
+                    cell_style = getattr(cell, "style", None) or TextStyle()
+                    cell_tag = f"kwiddle_cell_{id(cell)}"
+                    configure_text_tag(
+                        text_widget, cell_tag, cell_style,
+                        cell.attributes.get("text_align"),
+                        cell.attributes.get("style_properties", {}),
+                    )
+                    options = {}
+                    background = cell.attributes.get("background_color") or cell_style.background_color
+                    if background and background != "transparent":
+                        options["background"] = background
+                    border = cell.attributes.get("border")
+                    if border and border != "none":
+                        options.update({"borderwidth": 1, "relief": "solid"})
+                    if cell.attributes.get("vertical_align") == "middle":
+                        options["offset"] = 1
+                    if options:
+                        text_widget.tag_configure(cell_tag, **options)
+                    text_widget.tag_add(cell_tag, cell_start, cell_end)
+                row_end = text_widget.index(END)
+                text_widget.tag_add(table_tag, row_start, row_end)
+                row_props = row.attributes.get("style_properties", {})
+                row_bg = row_props.get("{urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0}background-color")
+                if row_bg:
+                    row_tag = f"kwiddle_row_{id(row)}"
+                    text_widget.tag_configure(row_tag, background=row_bg)
+                    text_widget.tag_add(row_tag, row_start, row_end)
                 text_widget.insert(END, "\n" + "─" * 55 + "\n")
             text_widget.insert(END, "\n")
             return
