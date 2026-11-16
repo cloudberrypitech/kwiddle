@@ -766,8 +766,8 @@ def run():
                 text.configure(padx=max(18, min(180, max(left_margin or 0, right_margin or 0))))
 
             master = _document_master(document)
-            header_text = master.get("header") or master.get("header-left")
-            footer_text = master.get("footer") or master.get("footer-left")
+            header_text = master.get("header") or master.get("header-first") or master.get("header-left")
+            footer_text = master.get("footer") or master.get("footer-first") or master.get("footer-left")
             text.tag_configure("kwiddle_page_header", font=("Arial", 9), foreground="#64748b", justify="center")
             text.tag_configure("kwiddle_page_footer", font=("Arial", 9), foreground="#64748b", justify="center")
             if header_text:
