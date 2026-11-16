@@ -117,8 +117,10 @@ def run():
             options["foreground"] = style.color
         if getattr(style, "background_color", None) and style.background_color != "transparent":
             options["background"] = style.background_color
-        if getattr(style, "overline", False):
-            options["overstrike"] = True
+        if getattr(style, "superscript", False):
+            options["offset"] = 4
+        elif getattr(style, "subscript", False):
+            options["offset"] = -3
         if align == "center":
             options["justify"] = "center"
         elif align == "right":
@@ -144,6 +146,24 @@ def run():
                         options[target] = max(0, int(points * 1.33))
                 except Exception:
                     pass
+        background = attributes.get("background_color")
+        if background and background != "transparent":
+            options["background"] = background
+        border = attributes.get("border")
+        if border and border != "none":
+            options.update({"borderwidth": 1, "relief": "solid"})
+        line_height = attributes.get("line_height")
+        if line_height:
+            try:
+                import re
+                match = re.match(r"\\s*(\\d+(?:\\.\\d+)?)\\s*(pt|px|cm|mm|in)?", str(line_height))
+                if match:
+                    number = float(match.group(1))
+                    unit = match.group(2) or "pt"
+                    points = number * {"pt": 1, "px": .75, "cm": 28.346, "mm": 2.835, "in": 72}[unit]
+                    options["spacing2"] = max(0, int(points * 1.33))
+            except Exception:
+                pass
         text_widget.tag_configure(tag_name, **options)
 
     def _insert_image(text_widget, asset):
