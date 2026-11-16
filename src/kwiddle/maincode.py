@@ -24,6 +24,7 @@ from tkinter import (
     RAISED,
     messagebox,
 )
+from .reader_features import load_progress, save_progress, document_headings, fit_horizontal_margins
 from kwloader import (
     SUPPORTED_EXTENSIONS,
     BookDocument,
@@ -505,7 +506,11 @@ def run():
         )
 
         pages = build_document_pages(document)
-        current_page = 0
+        progress_key = str(file_path.resolve())
+        saved = load_progress(progress_key)
+        current_page = min(max(0, int(saved.get("page", 0) or 0)), len(pages) - 1)
+        reader_font_size = 14
+        reader_theme = "Light"
 
         page_label = Label(
             navigation_frame,
@@ -606,6 +611,10 @@ def run():
         def render_page():
             text.config(state=NORMAL)
             text.delete("1.0", END)
+            palette = {"Light": ("#ffffff", "#202124"), "Dark": ("#202124", "#e8eaed"), "Sepia": ("#f4ecd8", "#433522")}
+            bg, fg = palette.get(reader_theme, palette["Light"])
+            text.configure(background=bg, foreground=fg, insertbackground=fg)
+            fit_horizontal_margins(text)
 
             try:
                 page_blocks = pages[current_page]
@@ -627,8 +636,74 @@ def run():
                 )
 
             text.config(state=DISABLED)
+            text.configure(font=("Arial", reader_font_size))
             text.see("1.0")
+            save_progress(progress_key, page=current_page)
             refresh_navigation()
+
+        def change_zoom(delta):
+            nonlocal reader_font_size
+            reader_font_size = max(8, min(36, reader_font_size + delta))
+            render_page()
+
+        def change_theme(value):
+            nonlocal reader_theme
+            reader_theme = value
+            render_page()
+
+        def find_text():
+            from tkinter import simpledialog
+            query = simpledialog.askstring("Find in book", "Search for:", parent=book_window)
+            if not query:
+                return
+            text.tag_remove("kwiddle_search", "1.0", END)
+            start = "1.0"
+            while True:
+                found = text.search(query, start, stopindex=END, nocase=True)
+                if not found:
+                    break
+                end = f"{found}+{len(query)}c"
+                text.tag_add("kwiddle_search", found, end)
+                start = end
+            text.tag_configure("kwiddle_search", background="#ffe66d", foreground="#202124")
+            ranges = text.tag_ranges("kwiddle_search")
+            if ranges:
+                text.config(state=NORMAL)
+                text.see(ranges[0])
+                text.config(state=DISABLED)
+            else:
+                messagebox.showinfo("Find in book", "No matches on this page.", parent=book_window)
+
+        def show_fonts():
+            from .reader_features import font_inventory
+            names = font_inventory(document)
+            messagebox.showinfo("Document fonts", "Fonts used in this document:\n\n" + ("\n".join(names) if names else "No explicit font family was declared."), parent=book_window)
+
+        def show_outline():
+            headings = document_headings(document)
+            if not headings:
+                messagebox.showinfo("Contents", "This document has no heading outline.", parent=book_window)
+                return
+            outline = Toplevel(book_window)
+            outline.title("Document contents")
+            outline.geometry("360x420")
+            for heading, level in headings:
+                Label(outline, text=("    " * (level - 1)) + heading, anchor="w").pack(fill="x", padx=10, pady=3)
+
+        Button(navigation_frame, text="−", command=lambda: change_zoom(-1), width=3).pack(side=LEFT, padx=2)
+        Button(navigation_frame, text="+", command=lambda: change_zoom(1), width=3).pack(side=LEFT, padx=2)
+        Button(navigation_frame, text="Find", command=find_text, width=7).pack(side=LEFT, padx=2)
+        Button(navigation_frame, text="Contents", command=show_outline, width=9).pack(side=LEFT, padx=2)
+        Button(navigation_frame, text="Fonts", command=show_fonts, width=7).pack(side=LEFT, padx=2)
+        from tkinter import OptionMenu, StringVar
+        theme_var = StringVar(value=reader_theme)
+        OptionMenu(navigation_frame, theme_var, "Light", "Dark", "Sepia", command=change_theme).pack(side=LEFT, padx=2)
+
+        book_window.bind("<Left>", lambda event: go_previous())
+        book_window.bind("<Right>", lambda event: go_next())
+        book_window.bind("<Control-f>", lambda event: find_text())
+        book_window.bind("<Control-plus>", lambda event: change_zoom(1))
+        book_window.bind("<Control-minus>", lambda event: change_zoom(-1))
 
         render_page()
 
