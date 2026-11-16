@@ -18,9 +18,9 @@ python -m pip install "Pillow>=10,<13" "CairoSVG>=2.7.1,<3" "pyfiglet>=1.0.4,<2"
 python -m kwiddle
 ```
 
-Place supported documents in `src/kwiddle/books/`. Kwiddle scans that directory recursively and refreshes the library automatically. Embedded raster images and SVGs are displayed in the reader; text runs preserve common font, size, colour, highlight, underline, strike-through and hyperlink formatting. Lists and tables are rendered in a readable text layout.
+Place supported documents in `src/kwiddle/books/`. Kwiddle scans that directory recursively and refreshes the library automatically. The offline reader renders embedded raster images and SVGs, common inherited and direct font styling, paragraph alignment/spacing/indentation, hyperlinks, notes, numbered and bulleted lists, styled table cells, and available page dimensions/margins and master-page headers/footers.
 
-For best image support, install the declared Pillow dependency. External linked images are not downloaded.
+For best image support, install the declared Pillow and CairoSVG dependencies. External linked images are not downloaded. Complex OLE objects, charts, formulas, text wrapping around floating objects, fields and exact paginated layout still depend on the source document and may display as simplified content.
 
 
 ## Reader features
