@@ -221,7 +221,7 @@ def run():
             return f"{level.get('num_prefix', '')}{label}{level.get('num_suffix', '.')} "
         return (level.get("bullet_char") or "•") + " "
 
-    def insert_block(text_widget, block: TextBlock, depth=0, list_marker=None):
+    def insert_block(text_widget, block: TextBlock, depth=0, list_marker=None, compact=False):
         """Render the shared document model, including embedded media and styled tables."""
         if block.kind == "page_break":
             text_widget.insert(END, "\n\n" + "─" * 32 + "\n\n")
@@ -232,7 +232,7 @@ def run():
             list_style = block.attributes.get("list_style", {})
             for index, child in enumerate(block.children):
                 marker = _list_marker(index, list_style)
-                insert_block(text_widget, child, depth, marker if child.kind == "list_item" else None)
+                insert_block(text_widget, child, depth, marker if child.kind == "list_item" else None, compact)
             return
         if block.kind in {"section", "toc", "index", "list_item", "list_header"}:
             if block.kind == "list_item" and list_marker:
@@ -240,11 +240,15 @@ def run():
             elif block.kind == "list_header":
                 text_widget.insert(END, "    " * depth)
             for child in block.children:
-                insert_block(text_widget, child, depth + (1 if block.kind in {"list_item", "list"} else 0))
+                insert_block(text_widget, child, depth + (1 if block.kind in {"list_item", "list"} else 0), compact=compact)
             return
         if block.kind == "table":
             table_tag = f"kwiddle_table_{id(block)}"
-            text_widget.tag_configure(table_tag, lmargin1=8, rmargin=8)
+            max_columns = max((len(row.children) for row in block.children), default=1)
+            available_width = max(360, text_widget.winfo_width() - 90)
+            column_width = max(100, available_width // max(1, max_columns))
+            tab_stops = tuple(column_width * index for index in range(1, max_columns + 1))
+            text_widget.tag_configure(table_tag, lmargin1=8, rmargin=8, tabs=tab_stops)
             text_widget.insert(END, "\n")
             for row_index, row in enumerate(block.children):
                 row_start = text_widget.index(END)
@@ -252,17 +256,18 @@ def run():
                     if cell.attributes.get("covered"):
                         continue
                     if index:
-                        text_widget.insert(END, "    │    ")
+                        text_widget.insert(END, "\t")
                     cell_start = text_widget.index(END)
-                    for paragraph in cell.children:
-                        insert_block(text_widget, paragraph, depth)
+                    for paragraph_index, paragraph in enumerate(cell.children):
+                        if paragraph_index:
+                            text_widget.insert(END, " ")
+                        insert_block(text_widget, paragraph, depth, compact=True)
                     cell_end = text_widget.index(END)
                     cell_style = getattr(cell, "style", None) or TextStyle()
                     cell_tag = f"kwiddle_cell_{id(cell)}"
                     configure_text_tag(
                         text_widget, cell_tag, cell_style,
                         cell.attributes.get("text_align"),
-                        cell.attributes.get("style_properties", {}),
                     )
                     options = {}
                     background = cell.attributes.get("background_color") or cell_style.background_color
@@ -284,12 +289,16 @@ def run():
                     row_tag = f"kwiddle_row_{id(row)}"
                     text_widget.tag_configure(row_tag, background=row_bg)
                     text_widget.tag_add(row_tag, row_start, row_end)
-                text_widget.insert(END, "\n" + "─" * 55 + "\n")
+                text_widget.insert(END, "\n")
+                if row_index < len(block.children) - 1:
+                    text_widget.insert(END, "─" * min(75, max(20, available_width // 9)) + "\n")
             text_widget.insert(END, "\n")
             return
+
         if block.kind == "image":
             _insert_image(text_widget, block.image)
-            text_widget.insert(END, "\n\n")
+            if not compact:
+                text_widget.insert(END, "\n\n")
             return
 
         if block.kind == "heading":
@@ -331,7 +340,8 @@ def run():
                                      lambda event, url=run.link: webbrowser.open(url))
             text_widget.insert(END, run.text, tag_name)
 
-        text_widget.insert(END, "\n\n")
+        if not compact:
+            text_widget.insert(END, "\n\n")
         if block.attributes.get("break_after") in {"page", "column"}:
             text_widget.insert(END, "\n\n" + "─" * 32 + "\n\n")
 
