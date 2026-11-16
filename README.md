@@ -12,6 +12,17 @@ python -m pip install --no-deps -e .
 python -m pip install "Pillow>=10,<13" "CairoSVG>=2.7.1,<3" "pyfiglet>=1.0.4,<2"
 ```
 
+## Update
+
+For a source checkout, pull the latest Kwiddle and kwloader changes. When kwloader is installed from Git rather than a local sibling checkout, update it with:
+
+```bash
+python -m pip install --upgrade "kwloader @ git+https://github.com/cloudberrypitech/kwloader@main"
+python -m pip install --no-deps -e .
+```
+
+When using a separate local kwloader checkout, update that checkout and reinstall it in editable mode instead.
+
 ## Run
 
 ```bash
