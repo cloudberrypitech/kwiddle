@@ -212,9 +212,9 @@ def run():
         except Exception as error:
             text_widget.insert(END, f"[Could not display image: {error}]")
 
-    def _list_marker(index, list_style):
+    def _list_marker(index, list_style, level_number=1):
         levels = (list_style or {}).get("levels", [])
-        level = levels[0] if levels else {}
+        level = next((item for item in levels if str(item.get("level", "1")) == str(level_number)), levels[0] if levels else {})
         kind = level.get("kind", "")
         if kind == "list-level-style-number":
             fmt = level.get("num_format") or "1"
@@ -251,7 +251,7 @@ def run():
         if block.kind == "list":
             list_style = block.attributes.get("list_style", {})
             for index, child in enumerate(block.children):
-                marker = _list_marker(index, list_style)
+                marker = _list_marker(index, list_style, block.attributes.get("level", 1))
                 insert_block(text_widget, child, depth, marker if child.kind == "list_item" else None, compact)
             return
         if block.kind in {"section", "toc", "index", "list_item", "list_header"}:
