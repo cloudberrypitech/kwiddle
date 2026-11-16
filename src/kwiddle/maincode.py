@@ -674,6 +674,11 @@ def run():
             else:
                 messagebox.showinfo("Find in book", "No matches on this page.", parent=book_window)
 
+        def show_fonts():
+            from .reader_features import font_inventory
+            names = font_inventory(document)
+            messagebox.showinfo("Document fonts", "Fonts used in this document:\n\n" + ("\n".join(names) if names else "No explicit font family was declared."), parent=book_window)
+
         def show_outline():
             headings = document_headings(document)
             if not headings:
@@ -689,6 +694,7 @@ def run():
         Button(navigation_frame, text="+", command=lambda: change_zoom(1), width=3).pack(side=LEFT, padx=2)
         Button(navigation_frame, text="Find", command=find_text, width=7).pack(side=LEFT, padx=2)
         Button(navigation_frame, text="Contents", command=show_outline, width=9).pack(side=LEFT, padx=2)
+        Button(navigation_frame, text="Fonts", command=show_fonts, width=7).pack(side=LEFT, padx=2)
         from tkinter import OptionMenu, StringVar
         theme_var = StringVar(value=reader_theme)
         OptionMenu(navigation_frame, theme_var, "Light", "Dark", "Sepia", command=change_theme).pack(side=LEFT, padx=2)
