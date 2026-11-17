@@ -65,6 +65,8 @@ jobs:
               ET.SubElement(text_body, q("text", "p")).text = ""
 
               chapter = re.compile(r"^(CHAPTER|Chapter)\s+([IVXLCDM]+|\d+)(?:[.: —-].*)?$")
+          roman_heading = re.compile(r"^[IVXLCDM]{1,8}\.?$")
+          numbered_heading = re.compile(r"^[IVXLCDM]{1,8}\.\s+.{1,100}$")
               all_caps = re.compile(r"^[A-Z][A-Z0-9 ,:'’&!?()—-]{3,90}$")
               for raw_line in source_text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
                   line = raw_line.rstrip()
