@@ -4,7 +4,7 @@ PDFs are rendered page-by-page with PyMuPDF, keeping the document local.
 """
 from pathlib import Path
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 from PIL import Image, ImageTk
 
 
@@ -20,12 +20,12 @@ def open_pdf_reader(parent, path, title=None):
     path = Path(path)
     document = fitz.open(path)
     if document.needs_pass:
-        document.close()
-        password = tk.simpledialog.askstring(
+        password = simpledialog.askstring(
             "Password-protected PDF", "Enter the PDF password:",
             parent=parent, show="*"
         )
         if not password or not document.authenticate(password):
+            document.close()
             raise RuntimeError("The PDF password was missing or incorrect.")
 
     viewer = tk.Toplevel(parent)
@@ -103,13 +103,19 @@ def open_pdf_reader(parent, path, title=None):
     tk.Label(toolbar, textvariable=page_info, padx=8).pack(side="left", expand=True)
     full_button = tk.Button(toolbar, text="Full screen", command=fullscreen)
     full_button.pack(side="right", padx=2)
-    tk.Button(toolbar, text="Close", command=viewer.destroy).pack(side="right", padx=2)
+    def close_document():
+        try:
+            document.close()
+        finally:
+            viewer.destroy()
+
+    tk.Button(toolbar, text="Close", command=close_document).pack(side="right", padx=2)
 
     viewer.bind("<Left>", lambda _e: previous())
     viewer.bind("<Right>", lambda _e: next_page())
     viewer.bind("<F11>", fullscreen)
     viewer.bind("<Escape>", lambda _e: viewer.attributes("-fullscreen", False))
     viewer.bind("<Configure>", lambda _e: viewer.after_idle(render) if state["fit"] else None)
-    viewer.protocol("WM_DELETE_WINDOW", lambda: (document.close(), viewer.destroy()))
+    viewer.protocol("WM_DELETE_WINDOW", close_document)
     viewer.after(100, render)
     return viewer
