@@ -66,7 +66,7 @@ jobs:
 
               chapter = re.compile(r"^(CHAPTER|Chapter)\s+([IVXLCDM]+|\d+)(?:[.: —-].*)?$")
               all_caps = re.compile(r"^[A-Z][A-Z0-9 ,:'’&!?()—-]{3,90}$")
-              for raw_line in source_text.replace("\\r\\n", "\\n").replace("\\r", "\\n").split("\\n"):
+              for raw_line in source_text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
                   line = raw_line.rstrip()
                   if not line.strip():
                       continue
