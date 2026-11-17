@@ -598,38 +598,31 @@ def run():
             sashrelief=RAISED,
             showhandle=True,
         )
-        reader_pane.pack(
-            fill=BOTH,
-            expand=True,
-        )
+        reader_pane.pack(fill=BOTH, expand=True)
 
         text_frame = Frame(reader_pane)
         navigation_frame = Frame(reader_pane)
+        reader_pane.add(text_frame, minsize=250, stretch="always")
+        reader_pane.add(navigation_frame, minsize=65, stretch="never")
 
-        reader_pane.add(
-            text_frame,
-            minsize=250,
-            stretch="always",
-        )
-        reader_pane.add(
-            navigation_frame,
-            minsize=75,
-            stretch="never",
-        )
+        toolbar_frame = Frame(text_frame)
+        toolbar_frame.pack(fill="x", padx=12, pady=(10, 0))
 
         text = Text(
             text_frame,
             wrap="word",
             font=("Arial", 14),
-            padx=20,
-            pady=20,
+            padx=24,
+            pady=24,
             undo=False,
+            borderwidth=0,
+            highlightthickness=0,
         )
         text.pack(
             side=LEFT,
             fill=BOTH,
             expand=True,
-            padx=(10, 0),
+            padx=10,
             pady=10,
         )
 
@@ -758,12 +751,8 @@ def run():
             palette = {"Light": ("#ffffff", "#202124"), "Dark": ("#202124", "#e8eaed"), "Sepia": ("#f4ecd8", "#433522")}
             bg, fg = palette.get(reader_theme, palette["Light"])
             text.configure(background=bg, foreground=fg, insertbackground=fg)
-            fit_horizontal_margins(text)
+            apply_reading_margins()
             properties = _document_page_layout(document)
-            left_margin = _odf_length_pixels(_odf_property(properties, "margin-left"))
-            right_margin = _odf_length_pixels(_odf_property(properties, "margin-right"))
-            if left_margin or right_margin:
-                text.configure(padx=max(18, min(180, max(left_margin or 0, right_margin or 0))))
 
             master = _document_master(document)
             header_text = master.get("header") or master.get("header-first") or master.get("header-left")
@@ -849,15 +838,63 @@ def run():
             for heading, level in headings:
                 Label(outline, text=("    " * (level - 1)) + heading, anchor="w").pack(fill="x", padx=10, pady=3)
 
-        Button(navigation_frame, text="−", command=lambda: change_zoom(-1), width=3).pack(side=LEFT, padx=2)
-        Button(navigation_frame, text="+", command=lambda: change_zoom(1), width=3).pack(side=LEFT, padx=2)
-        Button(navigation_frame, text="Find", command=find_text, width=7).pack(side=LEFT, padx=2)
-        Button(navigation_frame, text="Contents", command=show_outline, width=9).pack(side=LEFT, padx=2)
-        Button(navigation_frame, text="Fonts", command=show_fonts, width=7).pack(side=LEFT, padx=2)
         from tkinter import OptionMenu, StringVar
         theme_var = StringVar(value=reader_theme)
-        OptionMenu(navigation_frame, theme_var, "Light", "Dark", "Sepia", command=change_theme).pack(side=LEFT, padx=2)
 
+        Button(toolbar_frame, text="A−", command=lambda: change_zoom(-1), width=4).pack(side=LEFT, padx=3)
+        Button(toolbar_frame, text="A+", command=lambda: change_zoom(1), width=4).pack(side=LEFT, padx=3)
+        Button(toolbar_frame, text="Find", command=find_text, width=8).pack(side=LEFT, padx=3)
+        Button(toolbar_frame, text="Contents", command=show_outline, width=10).pack(side=LEFT, padx=3)
+        Button(toolbar_frame, text="Fonts", command=show_fonts, width=8).pack(side=LEFT, padx=3)
+        OptionMenu(toolbar_frame, theme_var, "Light", "Dark", "Sepia", command=change_theme).pack(side=LEFT, padx=3)
+
+        fullscreen_state = {"enabled": False}
+        def toggle_fullscreen(_event=None):
+            fullscreen_state["enabled"] = not fullscreen_state["enabled"]
+            book_window.attributes("-fullscreen", fullscreen_state["enabled"])
+            fullscreen_button.config(text="Exit full screen" if fullscreen_state["enabled"] else "Full screen")
+            book_window.after_idle(apply_reading_margins)
+            return "break"
+
+        fullscreen_button = Button(toolbar_frame, text="Full screen", command=toggle_fullscreen)
+        fullscreen_button.pack(side=RIGHT, padx=3)
+
+        def apply_reading_margins(_event=None):
+            try:
+                viewport = max(1, text.winfo_width())
+                readable_width = min(820, max(320, viewport - 48))
+                outer_margin = max(18, (viewport - readable_width) // 2)
+                layout = _document_page_layout(document)
+                page_width = _odf_length_pixels(_odf_property(layout, "page-width"))
+                left = _odf_length_pixels(_odf_property(layout, "margin-left")) or 0
+                right = _odf_length_pixels(_odf_property(layout, "margin-right")) or 0
+                if page_width:
+                    scale = readable_width / max(1, page_width)
+                    document_margin = int(((left + right) / 2) * scale)
+                    document_margin = min(document_margin, int(readable_width * 0.18))
+                else:
+                    document_margin = 0
+                text.configure(padx=outer_margin + document_margin)
+            except Exception:
+                text.configure(padx=24)
+
+        margin_resize_job = {"id": None}
+        def schedule_margin_update(_event=None):
+            if margin_resize_job["id"] is not None:
+                try:
+                    book_window.after_cancel(margin_resize_job["id"])
+                except Exception:
+                    pass
+            margin_resize_job["id"] = book_window.after(60, apply_reading_margins)
+
+        text.bind("<Configure>", schedule_margin_update)
+        book_window.bind("<F11>", toggle_fullscreen)
+        book_window.bind("<Escape>", lambda event: (
+            book_window.attributes("-fullscreen", False),
+            fullscreen_state.update(enabled=False),
+            fullscreen_button.config(text="Full screen"),
+            apply_reading_margins(),
+        ))
         book_window.bind("<Left>", lambda event: go_previous())
         book_window.bind("<Right>", lambda event: go_next())
         book_window.bind("<Control-f>", lambda event: find_text())
