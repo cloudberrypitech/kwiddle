@@ -71,7 +71,7 @@ jobs:
                   if not line.strip():
                       continue
                   stripped = line.strip()
-                  if chapter.match(stripped) or (all_caps.match(stripped) and len(stripped) < 90):
+                  if chapter.match(stripped) or roman_heading.match(stripped) or numbered_heading.match(stripped) or (all_caps.match(stripped) and len(stripped) < 90):
                       ET.SubElement(text_body, q("text", "h"), {
                           q("text", "style-name"): "Heading_1",
                           q("text", "outline-level"): "1",
