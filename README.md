@@ -57,3 +57,21 @@ Place complete supported book files in `src/kwiddle/books/` (subfolders are scan
 too). Kwiddle detects additions, replacements, and removals automatically while the
 library is open. Supported formats are provided by `kwloader`; use ODT/FODT for
 portable, self-contained books with embedded images and formatting.
+
+
+## PDF reading
+
+Kwiddle can open PDF files placed in the same books folder as ODT documents
+(`src/kwiddle/books/`). The desktop reader renders PDF pages locally and
+provides previous/next navigation, page selection, fit-to-width, zoom, and
+fullscreen controls.
+
+PDF rendering uses PyMuPDF. It is included in the normal Kwiddle installation;
+after upgrading an existing environment, run:
+
+```bash
+python -m pip install --upgrade kwiddle
+```
+
+The online reader also has an **Open PDF** control for opening a PDF from the
+device. Browser PDF files are rendered locally and are not uploaded to a server.
