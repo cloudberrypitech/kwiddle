@@ -45,3 +45,15 @@ lists, and tables using the format-neutral model supplied by `kwloader`.
 Reader progress is stored under `~/.local/share/kwiddle/reading-progress.json`
 and is optional: if the location is unavailable, reading continues without saving.
 Use the **Fonts** control to inspect font families declared in the source document.
+
+The reading view keeps a centred, comfortable text column when the window is resized
+or switched to full screen. Use **F11** or the **Full screen** button to toggle full
+screen; **Esc** exits it. The toolbar provides text-size, search, contents, font, and
+reading-theme controls. Left/Right arrow keys move between reader pages.
+
+## Adding books
+
+Place complete supported book files in `src/kwiddle/books/` (subfolders are scanned
+too). Kwiddle detects additions, replacements, and removals automatically while the
+library is open. Supported formats are provided by `kwloader`; use ODT/FODT for
+portable, self-contained books with embedded images and formatting.
