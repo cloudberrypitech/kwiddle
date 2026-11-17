@@ -82,12 +82,17 @@ def table_to_rows(table_block) -> list[list[str]]:
     return rows
 
 
-def fit_horizontal_margins(widget, minimum: int = 18, maximum: int = 120) -> int:
-    """Center the reading column as the window grows; return the applied margin."""
+def fit_horizontal_margins(widget, minimum: int = 18, maximum: int = 420,
+                             reading_width: int = 820) -> int:
+    """Center a readable text column and keep its margins responsive to window size.
+
+    The margin grows with a maximized/full-screen window, while the text measure
+    remains bounded so paragraphs never stretch across the entire display.
+    """
     try:
         width = max(1, widget.winfo_width())
-        # Keep a comfortable measure instead of stretching long lines edge-to-edge.
-        margin = max(minimum, min(maximum, (width - 760) // 2))
+        content_width = min(reading_width, max(320, width - 2 * minimum))
+        margin = max(minimum, min(maximum, (width - content_width) // 2))
         widget.configure(padx=margin)
         return margin
     except Exception:
