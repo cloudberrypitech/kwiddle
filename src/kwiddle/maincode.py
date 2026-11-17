@@ -25,6 +25,7 @@ from tkinter import (
     messagebox,
 )
 from .reader_features import load_progress, save_progress, document_headings, fit_horizontal_margins
+from .pdf_reader import open_pdf_reader
 from kwloader import (
     SUPPORTED_EXTENSIONS,
     BookDocument,
@@ -445,7 +446,7 @@ def run():
             ):
                 continue
 
-            if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS and file_path.suffix.lower() != ".pdf":
                 continue
 
             found_count += 1
@@ -453,8 +454,8 @@ def run():
             print(f"[Kwiddle] Found book: {file_path}")
 
             try:
-                document = load_book(file_path)
-                title = document.title or file_path.stem
+                document = None if file_path.suffix.lower() == ".pdf" else load_book(file_path)
+                title = (document.title if document else None) or file_path.stem
 
                 original_title = title
                 number = 2
@@ -500,7 +501,7 @@ def run():
             ):
                 continue
 
-            if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS and file_path.suffix.lower() != ".pdf":
                 continue
 
             try:
@@ -564,6 +565,14 @@ def run():
 
     def open_book(title):
         document = books.get(title)
+        file_path = book_files.get(title)
+
+        if file_path is not None and file_path.suffix.lower() == ".pdf":
+            try:
+                open_pdf_reader(window, file_path, title)
+            except Exception as error:
+                messagebox.showerror(parent=window, title="Could not open PDF", message=f"{type(error).__name__}: {error}")
+            return
 
         if document is None:
             messagebox.showerror(
@@ -572,8 +581,6 @@ def run():
                 message=f"Could not find the loaded document for:\n\n{title}",
             )
             return
-
-        file_path = book_files.get(title)
 
         if file_path is None:
             messagebox.showerror(
